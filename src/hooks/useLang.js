@@ -1,0 +1,202 @@
+import { useMemo, useState } from 'react';
+
+const STORAGE_KEY = 'biasharapro_lang';
+
+const translations = {
+  en: {
+    // Onboarding
+    welcome: "Welcome to BiasharaPro!",
+    welcomeSub: "Help us understand your business so we can get started.",
+    heroHeading: "Grow your business today.",
+    heroSub: "Join thousands of shop owners using BiasharaPro to manage their sales and stock with ease.",
+    businessName: "BUSINESS NAME",
+    phoneNumber: "PHONE NUMBER",
+    businessType: "BUSINESS TYPE",
+    continue: "Continue",
+    chooseLanguage: "CHOOSE YOUR LANGUAGE",
+    // Nav
+    dashboard: "Dashboard",
+    inventory: "Inventory",
+    sales: "Sales",
+    expenses: "Expenses",
+    bookkeeping: "Bookkeeping",
+    alerts: "Alerts",
+    account: "Account",
+    settings: "Settings",
+    // Dashboard
+    greeting: "Good morning",
+    greetingSub: "Here is your business overview for today.",
+    todaySales: "TODAY'S SALES",
+    profit: "PROFIT",
+    stockAlerts: "STOCK ALERTS",
+    // Legacy keys (preserved from existing)
+    offline: 'Network Status',
+    offlineSubtitle: 'Your data is safe even without internet.',
+    offlineWorking: "You're Offline — Working offline",
+    newSale: 'New Sale',
+    saveOffline: 'Save Offline',
+    syncQueue: 'Sync Queue',
+    syncNow: 'Sync Now',
+    accountSubtitle: 'Manage your BiasharaPro subscription.',
+    basicPlan: 'Basic Plan',
+    active: 'Active',
+    validUntil: 'Valid until',
+    payNow: 'Pay Now',
+    paymentHistory: 'Payment History',
+    whatIncluded: "What's Included",
+    upgradeToPro: 'Upgrade to Pro',
+    learnMore: 'Learn More',
+    alertsSubtitle: 'Products that need your attention.',
+    alertsCount: '5 Alerts',
+    recordExpense: 'Record Expense',
+    saveExpense: 'Save Expense',
+    bookkeepingSubtitle: 'Complete financial overview of your business.',
+    downloadReport: 'Download Report',
+    allAmountsKes: 'All amounts in KES',
+    transactionHistory: 'Transaction History',
+    currentBalance: 'Current Balance',
+    viewFullReport: 'View Full Report',
+    inventorySubtitle: 'Manage your products and stock.',
+    addProduct: 'Add Product',
+    searchProducts: 'Search products...',
+    allCategories: 'All Categories',
+    allStatuses: 'All Statuses',
+    totalProducts: 'Total Products',
+    lowStock: 'Low Stock',
+    outOfStock: 'Out of Stock',
+    showCount: 'Showing 8 of 32',
+    welcomeTitle: 'Welcome to BiasharaPro!',
+    welcomeSubtitle: 'Tell us about your business so we can begin your journey.',
+    businessNameLabel: 'BUSINESS NAME',
+    businessNamePlaceholder: 'Mama Wanjiku General Store',
+    phoneLabel: 'PHONE NUMBER',
+    phonePlaceholder: '712 345 678',
+    businessTypeLabel: 'BUSINESS TYPE',
+    retailShop: 'Retail Shop',
+    hardware: 'Hardware Store',
+    salon: 'Salon',
+    pharmacy: 'Pharmacy / Drug Store',
+    cafe: 'Cafe / Restaurant',
+    other: 'Other',
+    currencyLabel: 'CURRENCY',
+    countyLabel: 'COUNTY',
+    doneTitle: "You're all set!",
+    doneSubtitle: 'BiasharaPro is ready to help your business.',
+    summaryTitle: 'Business Summary',
+    goDashboard: 'Go to Dashboard',
+    leftStep1: 'Grow your business today.',
+    leftStep2: 'Financial management made simple.',
+    leftStep3: 'Welcome to the BiasharaPro family!',
+  },
+  sw: {
+    // Onboarding
+    welcome: "Karibu BiasharaPro!",
+    welcomeSub: "Tusaidie kufahamu biashara yako ili tuanze safari yetu.",
+    heroHeading: "Boresha biashara yako leo.",
+    heroSub: "Jiunge na maelfu ya wamiliki wa maduka wanaotumia BiasharaPro kusimamia mauzo na akiba zao kwa urahisi.",
+    businessName: "JINA LA BIASHARA",
+    phoneNumber: "NAMBA YA SIMU",
+    businessType: "AINA YA BIASHARA",
+    continue: "Endelea",
+    chooseLanguage: "CHAGUA LUGHA YAKO",
+    // Nav
+    dashboard: "Dashibodi",
+    inventory: "Bidhaa",
+    sales: "Mauzo",
+    expenses: "Gharama",
+    bookkeeping: "Vitabu",
+    alerts: "Tahadhari",
+    account: "Akaunti",
+    settings: "Mipangilio",
+    // Dashboard
+    greeting: "Habari ya asubuhi",
+    greetingSub: "Hapa kuna muhtasari wa biashara yako leo.",
+    todaySales: "MAUZO YA LEO",
+    profit: "FAIDA",
+    stockAlerts: "TAHADHARI YA STOKI",
+    // Legacy keys (preserved from existing)
+    offline: 'Hali ya Mtandao',
+    offlineSubtitle: 'Data yako ipo salama hata bila mtandao.',
+    offlineWorking: 'Huna Mtandao — Kazi inaendelea',
+    newSale: 'Rekodi Mauzo Mpya',
+    saveOffline: 'Hifadhi Offline',
+    syncQueue: 'Foleni ya Kusawazisha',
+    syncNow: 'Sawazisha Sasa',
+    accountSubtitle: 'Dhibiti mpango wako wa BiasharaPro.',
+    basicPlan: 'Mpango wa Msingi',
+    active: 'Amilifu',
+    validUntil: 'Halali hadi',
+    payNow: 'Lipa Sasa',
+    paymentHistory: 'Historia ya Malipo',
+    whatIncluded: 'Imejumuishwa',
+    upgradeToPro: 'Panda kwa Pro',
+    learnMore: 'Jifunze Zaidi',
+    alertsSubtitle: 'Bidhaa zinazohitaji umakini wako.',
+    alertsCount: '5 Tahadhari',
+    recordExpense: 'Ingiza Gharama',
+    saveExpense: 'Hifadhi Gharama',
+    bookkeepingSubtitle: 'Muhtasari kamili wa fedha za biashara yako.',
+    downloadReport: 'Pakua Ripoti',
+    allAmountsKes: 'Kiasi chote kwa KES',
+    transactionHistory: 'Historia ya Miamala',
+    currentBalance: 'Salio la Sasa',
+    viewFullReport: 'Angalia Ripoti',
+    inventorySubtitle: 'Simamia bidhaa na stoki yako.',
+    addProduct: 'Ongeza Bidhaa',
+    searchProducts: 'Tafuta bidhaa...',
+    allCategories: 'Jamii Zote',
+    allStatuses: 'Hali Yote',
+    totalProducts: 'Bidhaa Zote',
+    lowStock: 'Stoki Chini',
+    outOfStock: 'Zimekwisha',
+    showCount: 'Inaonyesha 8 kati ya 32',
+    welcomeTitle: 'Karibu BiasharaPro!',
+    welcomeSubtitle: 'Tusaidie kufahamu biashara yako ili tuanze safari yetu.',
+    businessNameLabel: 'JINA LA BIASHARA',
+    businessNamePlaceholder: 'Mama Wanjiku General Store',
+    phoneLabel: 'NAMBA YA SIMU',
+    phonePlaceholder: '712 345 678',
+    businessTypeLabel: 'AINA YA BIASHARA',
+    retailShop: 'Duka la Rejareja (Retail Shop)',
+    hardware: 'Duka la Hardware',
+    salon: 'Saluni',
+    pharmacy: 'Madawa / Duka la Dawa',
+    cafe: 'Mkahawa / Cafe',
+    other: 'Nyingine',
+    currencyLabel: 'SARAFU',
+    countyLabel: 'MKOA',
+    doneTitle: 'Umefanikiwa!',
+    doneSubtitle: 'BiasharaPro iko tayari kusaidia biashara yako.',
+    summaryTitle: 'Muhtasari wa Biashara',
+    goDashboard: 'Ingia Dashibodini',
+    leftStep1: 'Boresha biashara yako leo.',
+    leftStep2: 'Usimamizi wa fedha uliofanywa kwa urahisi.',
+    leftStep3: 'Karibu kwenye familia ya BiasharaPro!',
+  },
+};
+
+export default function useLang() {
+  const [lang, setLang] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(STORAGE_KEY);
+  });
+
+  const switchLang = (nextLang) => {
+    const safeLang = nextLang === 'en' ? 'en' : 'sw';
+    setLang(safeLang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, safeLang);
+    }
+  };
+
+  const t = useMemo(() => {
+    const activeLang = lang === 'en' ? 'en' : 'sw';
+    return (key) => translations[activeLang][key] ?? key;
+  }, [lang]);
+
+  return {
+    lang,
+    switchLang,
+    t,
+  };
+}
