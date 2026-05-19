@@ -24,7 +24,7 @@ export default function Badge({ status = 'default', children }) {
 
   return (
     <span
-      className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold"
+      className="inline-flex items-center rounded-full px-4 py-1.5 text-[11px] font-semibold whitespace-nowrap"
       style={style}
     >
       {children}

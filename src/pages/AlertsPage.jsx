@@ -83,7 +83,7 @@ export default function AlertsPage() {
     <div
       className="min-h-screen bg-[#eff5ef] text-[#171d19] relative"
       style={{
-        fontFamily: '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+        fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         backgroundImage: `linear-gradient(180deg, rgba(239,245,239,0.92), rgba(239,245,239,0.92)), url(${image3})`,
         backgroundSize: 'cover',
         backgroundPosition: 'bottom right',
@@ -94,13 +94,13 @@ export default function AlertsPage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-63 lg:pb-8">
+      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-60 lg:pb-8">
         <OfflineBanner />
 
         <div className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-[28px] font-extrabold text-[#171d19]">{t('alerts')}</h1>
-            <p className="mt-1 text-[16px] text-[#3d4a42]">{t('alertsSubtitle')}</p>
+            <h1 className="text-[24px] font-extrabold text-[#171d19] lg:text-[28px]">{t('alerts')}</h1>
+            <p className="mt-1 text-[14px] text-[#3d4a42] lg:text-[16px]">{t('alertsSubtitle')}</p>
           </div>
 
           <div className="rounded-full bg-[#fee2e2] px-4 py-2 text-[14px] font-bold text-[#dc2626]">

@@ -8,6 +8,18 @@ import OfflineBanner from '../components/OfflineBanner';
 import image2 from '../assets/image2.jpg';
 import image3 from '../assets/image3.jpg';
 
+const PROFILE_KEY = 'biasharapro_profile';
+
+function getProfile() {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    return JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
+
 function CartIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -73,22 +85,31 @@ const salesRows = [
 ];
 
 export default function DashboardPage() {
+  const profile = getProfile();
+  const storeName = profile?.shopName || 'Wanjiku Stores';
+
   return (
     <div
       className="min-h-screen bg-[#eff5ef] text-[#171d19] relative"
       style={{
-        fontFamily: '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-        backgroundImage: `linear-gradient(180deg, rgba(239,245,239,0.84), rgba(239,245,239,0.84)), url(${image2})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'bottom right',
-        backgroundRepeat: 'no-repeat',
+        fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(239,245,239,0.84),rgba(239,245,239,0.78))]" />
+        <img
+          src={image2}
+          alt=""
+          aria-hidden="true"
+          className="absolute right-0 top-0 hidden h-full w-full object-cover object-bottom-right opacity-35 lg:block"
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.56),transparent_42%)]" />
+      </div>
       <Sidebar />
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-16 lg:pl-55 lg:px-8 lg:pb-8 relative">
+      <main className="px-4 pb-20 pt-16 lg:px-8 lg:pl-60 lg:pb-8 relative">
         <div className="mb-6 flex flex-wrap items-center gap-3 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
           <span className="rounded-full bg-white px-3 py-1 shadow-sm">BiasharaPro Overview</span>
           <span className="rounded-full bg-white px-3 py-1 shadow-sm">Live</span>
@@ -100,8 +121,8 @@ export default function DashboardPage() {
             <OfflineBanner />
 
             <div className="mb-6 rounded-3xl border border-[rgba(226,232,240,0.5)] bg-[rgba(255,255,255,0.55)] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] backdrop-blur-[6px]">
-              <h1 className="text-[28px] font-extrabold leading-tight text-[#171d19]">Habari ya asubuhi, Wanjiku 👋</h1>
-              <p className="mt-1 text-[16px] text-[#3d4a42]">Hapa kuna muhtasari wa biashara yako leo.</p>
+              <h1 className="text-[24px] font-extrabold leading-tight text-[#171d19] lg:text-[28px]">Habari ya asubuhi, Wanjiku 👋</h1>
+              <p className="mt-1 text-[14px] text-[#3d4a42] lg:text-[16px]">Hapa kuna muhtasari wa biashara yako leo.</p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
                   <div className="text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">Leo</div>
@@ -133,28 +154,28 @@ export default function DashboardPage() {
             </div>
 
             <section className="mt-8">
-              <div className="mb-4 flex items-end justify-between gap-4">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                 <div>
                   <div className="flex flex-wrap items-baseline gap-2">
-                    <h2 className="text-[20px] font-extrabold text-[#171d19]">Mauzo ya Leo</h2>
-                    <span className="text-[14px] text-[#3d4a42]">(Today's Sales)</span>
+                    <h2 className="text-[18px] font-extrabold text-[#171d19] sm:text-[20px]">Mauzo ya Leo</h2>
+                    <span className="text-[12px] text-[#3d4a42] sm:text-[14px]">(Today's Sales)</span>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  className="rounded-xl border border-[#006948] bg-white px-4 py-2 text-[13px] font-semibold text-[#006948]"
+                  className="w-full rounded-xl border border-[#006948] bg-white px-4 py-2 text-[12px] font-semibold text-[#006948] sm:w-auto sm:text-[13px]"
                 >
                   Ongeza Mauzo
                 </button>
               </div>
 
               <div className="overflow-hidden rounded-2xl border border-[rgba(226,232,240,0.5)] bg-white">
-                <div className="border-b border-[#e5e7eb] bg-[#f9fafb] px-5 py-3">
-                  <div className="grid grid-cols-12 gap-3 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
+                <div className="border-b border-[#e5e7eb] bg-[#f9fafb] px-3 py-2 sm:px-5 sm:py-3">
+                  <div className="grid grid-cols-12 gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#6b7280] sm:gap-3 sm:text-[12px]">
                     <div className="col-span-2">WAKATI</div>
-                    <div className="col-span-3">BIDHAA</div>
-                    <div className="col-span-1 text-center">QTY</div>
+                    <div className="col-span-2">BIDHAA</div>
+                    <div className="col-span-2 text-center">QTY</div>
                     <div className="col-span-2">JUMLA</div>
                     <div className="col-span-2">MALIPO</div>
                     <div className="col-span-2">HALI</div>
@@ -163,14 +184,14 @@ export default function DashboardPage() {
 
                 <div className="divide-y divide-[#f3f4f6]">
                   {salesRows.map(([time, product, qty, total, payment]) => (
-                    <div key={`${time}-${product}`} className="grid grid-cols-12 gap-3 px-5 py-3.5 text-[14px] text-[#171d19]">
+                    <div key={`${time}-${product}`} className="grid grid-cols-12 gap-2 px-3 py-2.5 text-[11px] text-[#171d19] sm:gap-3 sm:px-4 sm:py-3.5 sm:text-[14px]">
                       <div className="col-span-2 font-medium text-[#3d4a42]">{time}</div>
-                      <div className="col-span-3 font-semibold">{product}</div>
+                      <div className="col-span-2 font-medium">{product}</div>
                       <div className="col-span-1 text-center">{qty}</div>
                       <div className="col-span-2 font-semibold text-[#006948]">{total}</div>
                       <div className="col-span-2">
                         <span
-                          className="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"
+                          className="inline-flex items-center rounded-full px-2.5 py-1 text-[9px] font-semibold whitespace-nowrap sm:px-4 sm:py-1.5 sm:text-[11px]"
                           style={{
                             backgroundColor: payment === 'Cash' ? '#eef2f7' : 'rgba(0, 105, 72, 0.10)',
                             color: payment === 'Cash' ? '#3d4a42' : '#006948',
@@ -179,7 +200,7 @@ export default function DashboardPage() {
                           {payment}
                         </span>
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-2 text-sm">
                         <Badge status="income">Imehifadhiwa</Badge>
                       </div>
                     </div>
@@ -187,7 +208,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="border-t border-[#f3f4f6] px-5 py-4 text-center">
-                  <button type="button" className="text-[14px] font-semibold text-[#006948]">
+                  <button type="button" className="text-[13px] font-semibold text-[#006948] sm:text-[14px]">
                     Angalia mauzo yote →
                   </button>
                 </div>
@@ -226,14 +247,23 @@ export default function DashboardPage() {
           <aside className="hidden xl:block">
             <div className="sticky top-24 space-y-4">
               <section className="rounded-2xl border border-[rgba(226,232,240,0.5)] bg-white overflow-hidden shadow-sm">
-                <img src={image3} alt="Dashboard illustration" className="w-full h-40 object-cover" />
+                <figure className="relative aspect-16/10 w-full overflow-hidden bg-[#eef5ef]">
+                  <img
+                    src={image3}
+                    alt="Dashboard illustration"
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover object-center"
+                  />
+                </figure>
                 <div className="p-5">
                   <h3 className="text-[16px] font-bold text-[#171d19]">Hali ya Mtandao</h3>
                   <div className="mt-4 flex items-center gap-2">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-[#16a34a]" />
                     <span className="text-[14px] font-medium text-[#16a34a]">Unaendesha mtandao</span>
                   </div>
-                  <p className="mt-2 text-[12px] text-[#6b7280]">Mwisho kusawazisha: Leo 14:32</p>
+                  <p className="mt-2 text-[12px] text-[#6b7280]">Duka: {storeName}</p>
+                  <p className="mt-1 text-[12px] text-[#6b7280]">Mwisho kusawazisha: Leo 14:32</p>
                   <button
                     type="button"
                     className="mt-3 w-full rounded-xl border border-[#006948] bg-white px-4 py-2 text-[13px] font-semibold text-[#006948]"

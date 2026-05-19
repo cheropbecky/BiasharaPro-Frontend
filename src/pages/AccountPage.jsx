@@ -2,6 +2,7 @@ import React from 'react';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import Badge from '../components/Badge';
 import OfflineBanner from '../components/OfflineBanner';
 import useLang from '../hooks/useLang';
 import image1 from '../assets/image1.jpg';
@@ -86,7 +87,7 @@ export default function AccountPage() {
     <div
       className="min-h-screen bg-[#eff5ef] text-[#171d19] relative"
       style={{
-        fontFamily: '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+        fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         backgroundImage: `linear-gradient(180deg, rgba(239,245,239,0.92), rgba(239,245,239,0.92)), url(${image1})`,
         backgroundSize: 'cover',
         backgroundPosition: 'top right',
@@ -97,13 +98,13 @@ export default function AccountPage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-63 lg:pb-8">
+      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-60 lg:pb-8">
         <OfflineBanner />
 
         <div className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-[28px] font-extrabold text-[#171d19]">{t('account')}</h1>
-            <p className="mt-1 text-[16px] text-[#3d4a42]">{t('accountSubtitle')}</p>
+            <h1 className="text-[24px] font-extrabold text-[#171d19] lg:text-[28px]">{t('account')}</h1>
+            <p className="mt-1 text-[14px] text-[#3d4a42] lg:text-[16px]">{t('accountSubtitle')}</p>
           </div>
         </div>
 
@@ -169,19 +170,19 @@ export default function AccountPage() {
                 {lang === 'en' ? 'Payment History' : 'Historia ya Malipo / Payment History'}
               </div>
               <div className="hidden md:block">
-                <div className="grid grid-cols-12 gap-3 border-y border-[#e5e7eb] bg-[#f9fafb] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
-                  <div className="col-span-3">TAREHE</div>
-                  <div className="col-span-3">KIASI</div>
-                  <div className="col-span-3">NAMBARI YA MPESA</div>
-                  <div className="col-span-3">HALI</div>
+                <div className="grid grid-cols-12 gap-4 border-y border-[#e5e7eb] bg-[#f9fafb] px-8 py-4 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
+                  <div className="col-span-2">TAREHE</div>
+                  <div className="col-span-2">KIASI</div>
+                  <div className="col-span-4">NAMBARI YA MPESA</div>
+                  <div className="col-span-4">HALI</div>
                 </div>
                 <div className="divide-y divide-[#f3f4f6]">
                   {paymentHistory.map(row => (
-                    <div key={row.mpesa} className="grid grid-cols-12 gap-3 px-5 py-4 text-[14px] text-[#171d19]">
-                      <div className="col-span-3 font-medium text-[#3d4a42]">{row.date}</div>
-                      <div className="col-span-3 font-semibold">{row.amount}</div>
-                      <div className="col-span-3 font-medium text-[#6b7280]">{row.mpesa}</div>
-                      <div className="col-span-3"><Badge status="income">{lang === 'en' ? 'Paid' : 'Imelipwa'}</Badge></div>
+                    <div key={row.mpesa} className="grid grid-cols-12 gap-4 px-8 py-4 text-[14px] text-[#171d19]">
+                      <div className="col-span-2 font-medium text-[#3d4a42]">{row.date}</div>
+                      <div className="col-span-2 font-semibold">{row.amount}</div>
+                      <div className="col-span-4 font-medium text-[#6b7280]">{row.mpesa}</div>
+                      <div className="col-span-4"><Badge status="income">{lang === 'en' ? 'Paid' : 'Imelipwa'}</Badge></div>
                     </div>
                   ))}
                 </div>

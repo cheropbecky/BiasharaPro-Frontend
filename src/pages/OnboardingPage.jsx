@@ -1,374 +1,328 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useLang from '../hooks/useLang';
 import heroImage from '../assets/hero.jpg';
 
-const baseFieldClass =
-  'w-full text-[16px] text-[#171d19] bg-[rgba(255,255,255,0.5)] border border-[#bccac0] rounded-2xl p-4.25 focus:outline-none focus:border-[#006948]';
+const ONBOARDING_COMPLETE_KEY = 'biasharapro_onboarding_complete';
+const PROFILE_KEY = 'biasharapro_profile';
 
-const countyOptions = [
-  'Nairobi',
-  'Mombasa',
-  'Kisumu',
-  'Nakuru',
-  'Eldoret',
-  'Nyeri',
-  'Thika',
-  'Nyingine / Other',
+const businessTypes = [
+  { value: 'retail', en: 'Retail Shop', sw: 'Duka la Rejareja' },
+  { value: 'hardware', en: 'Hardware Store', sw: 'Duka la Hardware' },
+  { value: 'salon', en: 'Salon', sw: 'Saluni' },
+  { value: 'pharmacy', en: 'Pharmacy / Drug Store', sw: 'Madawa / Duka la Dawa' },
+  { value: 'cafe', en: 'Cafe / Restaurant', sw: 'Mkahawa / Cafe' },
+  { value: 'other', en: 'Other', sw: 'Nyingine' },
 ];
 
-const currencyOptions = ['KES (Kenyan Shilling)', 'UGX', 'TZS', 'USD'];
+const languageChoices = [
+  { code: 'en', flag: '🇬🇧', label: 'English', helper: 'Continue in English' },
+  { code: 'sw', flag: '🇰🇪', label: 'Kiswahili', helper: 'Endelea kwa Kiswahili' },
+];
 
-function Stepper({ currentStep }) {
+function ArrowRightIcon() {
   return (
-    <div className="mt-4 flex gap-2">
-      {[1, 2, 3].map(step => (
-        <div
-          key={step}
-          className="h-1.5 w-8 rounded-full"
-          style={{ backgroundColor: step <= currentStep ? '#006948' : '#bccac0' }}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function DotProgress() {
+  return (
+    <div className="flex items-center gap-2" aria-hidden="true">
+      {[0, 1, 2, 3].map(index => (
+        <span
+          key={index}
+          className="h-2 w-2 rounded-full"
+          style={{ backgroundColor: index === 0 ? '#006948' : '#bccac0' }}
         />
       ))}
     </div>
   );
 }
 
-function LogoRow() {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#006948]">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M3 11L12 4l9 7v8a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-8z" fill="#fff" />
-        </svg>
-      </div>
-      <div className="text-[24px] font-extrabold text-[#006948]">BiasharaPro</div>
-    </div>
-  );
-}
+function getStoredProfile() {
+  if (typeof window === 'undefined') return null;
 
-function ArrowRightIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M5 12h14M13 5l7 7-7 7" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  try {
+    return JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
+  } catch {
+    return null;
+  }
 }
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { lang, switchLang, t } = useLang();
+  const [selectedLang, setSelectedLang] = useState(lang === 'en' || lang === 'sw' ? lang : 'sw');
+  const [formData, setFormData] = useState(() => {
+    const profile = getStoredProfile();
 
-  const [currentStep, setCurrentStep] = useState(1);
-  const [selectedLang, setSelectedLang] = useState(lang === 'en' || lang === 'sw' ? lang : null);
-
-  const [formData, setFormData] = useState({
-    shopName: 'Mama Wanjiku General Store',
-    phone: '',
-    businessType: 'retail',
-    currency: 'KES (Kenyan Shilling)',
-    county: 'Nairobi',
+    return {
+      shopName: profile?.shopName || 'Mama Wanjiku General Store',
+      phone: profile?.phone || '',
+      businessType: profile?.businessType || 'retail',
+    };
   });
+  const [errors, setErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
-  const languageChosen = selectedLang === 'en' || selectedLang === 'sw';
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true') {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
 
-  const leftPanelText = useMemo(() => {
-    if (currentStep === 2) return t('leftStep2');
-    if (currentStep === 3) return t('leftStep3');
-    return t('leftStep1');
-  }, [currentStep, t]);
+  useEffect(() => {
+    if (lang === 'en' || lang === 'sw') {
+      setSelectedLang(lang);
+    }
+  }, [lang]);
 
-  const handleContinueLanguage = () => {
-    if (!selectedLang) return;
-    switchLang(selectedLang);
-    localStorage.setItem('biasharapro_lang', selectedLang);
-    setCurrentStep(1);
-  };
+  const heroCopy = useMemo(() => {
+    if (selectedLang === 'en') {
+      return {
+        heading: 'Grow your business today.',
+        subheading: 'Join thousands of shop owners using BiasharaPro to manage sales and stock with ease.',
+        welcome: 'Welcome to BiasharaPro!',
+        intro: 'Help us understand your business so we can get started.',
+        step: 'Step 1 of 4',
+        nameLabel: 'BUSINESS NAME',
+        phoneLabel: 'PHONE NUMBER',
+        typeLabel: 'BUSINESS TYPE',
+        continue: 'Continue',
+        languageTitle: 'Choose your language',
+      };
+    }
 
-  const nextStep = () => {
-    setCurrentStep(prev => Math.min(prev + 1, 3));
-  };
+    return {
+      heading: 'Boresha biashara yako leo.',
+      subheading: 'Jiunge na maelfu ya wamiliki wa maduka wanaotumia BiasharaPro kusimamia mauzo na akiba zao kwa urahisi.',
+      welcome: 'Karibu BiasharaPro!',
+      intro: 'Tusaidie kufahamu biashara yako ili tuanze safari yetu.',
+      step: 'Hatua ya 1 kati ya 4',
+      nameLabel: 'JINA LA BIASHARA',
+      phoneLabel: 'NAMBA YA SIMU',
+      typeLabel: 'AINA YA BIASHARA',
+      continue: 'Endelea',
+      languageTitle: 'Chagua lugha yako',
+    };
+  }, [selectedLang]);
+
+  const businessTypeLabel = useMemo(() => {
+    return businessTypes.find(item => item.value === formData.businessType)?.[selectedLang === 'en' ? 'en' : 'sw'] || formData.businessType;
+  }, [formData.businessType, selectedLang]);
 
   const updateField = (key, value) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
+    setFormData(previous => ({ ...previous, [key]: value }));
+    setErrors(previous => ({ ...previous, [key]: '' }));
   };
 
-  const businessTypeLabel = {
-    retail: t('retailShop'),
-    hardware: t('hardware'),
-    salon: t('salon'),
-    pharmacy: t('pharmacy'),
-    cafe: t('cafe'),
-    other: t('other'),
-  }[formData.businessType];
+  const validate = () => {
+    const nextErrors = {};
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+
+    if (!formData.shopName.trim()) {
+      nextErrors.shopName = selectedLang === 'en' ? 'Business name is required.' : 'Jina la biashara linahitajika.';
+    }
+
+    if (!phoneDigits || phoneDigits.length < 9) {
+      nextErrors.phone = selectedLang === 'en' ? 'Enter a valid phone number.' : 'Weka namba ya simu iliyo sahihi.';
+    }
+
+    if (!formData.businessType) {
+      nextErrors.businessType = selectedLang === 'en' ? 'Pick a business type.' : 'Chagua aina ya biashara.';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = event => {
+    event.preventDefault();
+
+    if (!validate()) {
+      return;
+    }
+
+    setIsSaving(true);
+    switchLang(selectedLang);
+
+    const profile = {
+      shopName: formData.shopName.trim(),
+      phone: formData.phone.replace(/\D/g, ''),
+      businessType: formData.businessType,
+      language: selectedLang,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    }
+
+    navigate('/dashboard', { replace: true });
+  };
 
   return (
-    <div
-      className="min-h-screen md:h-screen overflow-hidden md:flex md:flex-row flex-col"
-      style={{ fontFamily: '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial' }}
-    >
-      <aside className="relative overflow-hidden md:w-1/2 w-full h-50 md:h-full bg-[#006948] text-white shrink-0" aria-hidden="true">
-        <img
-          src={heroImage}
-          alt="BiasharaPro hero"
-          className="absolute inset-0 h-full w-full object-cover mix-blend-multiply opacity-60"
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(128deg, rgba(0,105,72,0.8) 0%, rgba(0,133,93,0.4) 100%)',
-          }}
-        />
-
-        <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
-          <h2 className="text-[32px] md:text-[48px] font-extrabold leading-[1.1]" style={{ letterSpacing: '-0.5px' }}>
-            {leftPanelText}
-          </h2>
-          <p className="mt-4 hidden md:block max-w-md text-[18px] leading-[1.6] text-[#f5fff7]">
-            {lang === 'en'
-              ? 'Join thousands of shop owners using BiasharaPro to track sales and savings with ease.'
-              : 'Jiunge na maelfu ya wamiliki wa maduka wanaotumia BiasharaPro kusimamia mauzo na akiba zao kwa urahisi.'}
-          </p>
+    <div className="min-h-screen bg-[#fafaf9] text-[#171d19] lg:flex">
+      <aside className="relative hidden min-h-screen overflow-hidden lg:block lg:w-[42%] xl:w-[46%]">
+        <img src={heroImage} alt="BiasharaPro shop hero" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(26,46,26,0.86),rgba(26,46,26,0.42))]" />
+        <div className="absolute inset-x-0 bottom-0 p-12 text-white">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-white/75">BiasharaPro</p>
+          <h1 className="mt-4 max-w-xl text-[48px] font-extrabold leading-[0.98] tracking-[-0.04em]">
+            {heroCopy.heading}
+          </h1>
+          <p className="mt-5 max-w-xl text-[18px] leading-8 text-white/90">{heroCopy.subheading}</p>
         </div>
       </aside>
 
-      <main className="md:w-1/2 w-full bg-[#eff5ef] flex items-center justify-center p-6 md:p-12 overflow-y-auto md:overflow-hidden">
-        <div
-          className="w-full max-w-120 rounded-3xl"
-          style={{
-            background: 'rgba(255,255,255,0.7)',
-            backdropFilter: 'blur(6px)',
-            border: '1px solid rgba(226,232,240,0.5)',
-            padding: '32px',
-            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
-          }}
-        >
-          <LogoRow />
+      <main className="flex min-h-screen w-full items-start justify-center px-4 py-4 sm:px-6 lg:w-[58%] lg:items-center lg:px-10 lg:py-10 xl:w-[54%]">
+        <section className="w-full max-w-140 overflow-hidden rounded-4xl border border-[rgba(228,228,231,0.9)] bg-white shadow-[0_24px_60px_rgba(26,46,26,0.12)]">
+          <div className="lg:hidden">
+            <div className="relative h-48 overflow-hidden">
+              <img src={heroImage} alt="BiasharaPro shop hero" className="absolute inset-0 h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(26,46,26,0.15),rgba(26,46,26,0.78))]" />
+              <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/75">BiasharaPro</p>
+                <h1 className="mt-2 max-w-sm text-[28px] font-extrabold leading-[1.02] tracking-[-0.03em]">
+                  {heroCopy.heading}
+                </h1>
+              </div>
+            </div>
+          </div>
 
-          {!languageChosen ? (
-            <div className="mt-10">
-              <h3 className="text-center text-[22px] font-bold text-[#171d19]">Choose your language / Chagua lugha yako</h3>
-              <p className="mt-2 text-center text-[14px] text-[#6b7280]">
-                You can change this later in settings. / Unaweza kubadilisha baadaye.
-              </p>
+          <div className="px-5 pb-6 pt-5 sm:px-7 sm:pb-8 sm:pt-7 lg:px-9 lg:pb-10 lg:pt-9">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1a2e1a] text-white shadow-sm">
+                    <span className="text-[18px] font-extrabold">BP</span>
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-bold text-[#1a2e1a]">BiasharaPro</p>
+                    <p className="text-[12px] text-[#6b7280]">Offline-first retail tools</p>
+                  </div>
+                </div>
 
-              <div className="mt-8 flex flex-col gap-3">
-                {[
-                  { code: 'en', flag: '🇬🇧', title: 'English', subtitle: 'Continue in English' },
-                  { code: 'sw', flag: '🇰🇪', title: 'Kiswahili', subtitle: 'Endelea kwa Kiswahili' },
-                ].map(option => {
-                  const isSelected = selectedLang === option.code;
+                <h2 className="mt-6 text-[24px] font-extrabold leading-tight text-[#171d19] sm:text-[28px]">
+                  {heroCopy.welcome}
+                </h2>
+                <p className="mt-2 max-w-xl text-[15px] leading-7 text-[#3d4a42] sm:text-[16px]">{heroCopy.intro}</p>
+              </div>
+
+              <div className="rounded-2xl border border-[#e5e7eb] bg-[#fafaf9] px-4 py-3 text-left sm:min-w-48">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#6b7280]">{heroCopy.step}</p>
+                <div className="mt-3">
+                  <DotProgress />
+                </div>
+                <p className="mt-3 text-[12px] text-[#6b7280]">{selectedLang === 'en' ? 'One screen, one quick setup.' : 'Skrini moja, usanidi wa haraka.'}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-[28px] border border-[#eef0ec] bg-[#fcf9f4] p-4 sm:p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#6b7280]">{heroCopy.languageTitle}</p>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                {languageChoices.map(option => {
+                  const active = selectedLang === option.code;
+
                   return (
                     <button
                       key={option.code}
                       type="button"
                       onClick={() => setSelectedLang(option.code)}
-                      className="w-full rounded-2xl border-2 px-6 py-5 text-left transition-colors"
+                      className="rounded-2xl border px-4 py-3 text-left transition-all"
                       style={{
-                        borderColor: isSelected ? '#006948' : '#bccac0',
-                        background: isSelected ? '#eff5ef' : '#fff',
+                        borderColor: active ? '#1a2e1a' : '#d1d5db',
+                        background: active ? '#edf4ed' : '#ffffff',
+                        boxShadow: active ? '0 10px 24px rgba(26,46,26,0.08)' : 'none',
                       }}
                     >
-                      <div className="flex items-center gap-4">
-                        <span className="text-[24px]" aria-hidden="true">{option.flag}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[22px]" aria-hidden="true">{option.flag}</span>
                         <div>
-                          <p className="text-[18px] font-bold text-[#171d19]">{option.title}</p>
-                          <p className="text-[14px] text-[#6b7280]">{option.subtitle}</p>
+                          <div className="text-[14px] font-bold text-[#171d19]">{option.label}</div>
+                          <div className="text-[12px] text-[#6b7280]">{option.helper}</div>
                         </div>
                       </div>
                     </button>
                   );
                 })}
               </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <div>
+                <label className="mb-2 block text-[13px] font-bold uppercase tracking-[0.18em] text-[#3d4a42]">
+                  {heroCopy.nameLabel}
+                </label>
+                <input
+                  value={formData.shopName}
+                  onChange={event => updateField('shopName', event.target.value)}
+                  className="w-full rounded-2xl border border-[#bccac0] bg-white px-4 py-4 text-[15px] text-[#171d19] outline-none transition-colors placeholder:text-[#9ca3af] focus:border-[#1a2e1a]"
+                  placeholder={selectedLang === 'en' ? 'e.g. Mama Wanjiku General Store' : 'mf. Mama Wanjiku General Store'}
+                />
+                {errors.shopName ? <p className="mt-2 text-[12px] font-medium text-[#dc2626]">{errors.shopName}</p> : null}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-[13px] font-bold uppercase tracking-[0.18em] text-[#3d4a42]">
+                  {heroCopy.phoneLabel}
+                </label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[15px] text-[#3d4a42]">+254</span>
+                  <input
+                    value={formData.phone}
+                    onChange={event => updateField('phone', event.target.value)}
+                    inputMode="numeric"
+                    className="w-full rounded-2xl border border-[#bccac0] bg-white py-4 pl-16 pr-4 text-[15px] text-[#171d19] outline-none transition-colors placeholder:text-[#9ca3af] focus:border-[#1a2e1a]"
+                    placeholder={selectedLang === 'en' ? '712 345 678' : '712 345 678'}
+                  />
+                </div>
+                {errors.phone ? <p className="mt-2 text-[12px] font-medium text-[#dc2626]">{errors.phone}</p> : null}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-[13px] font-bold uppercase tracking-[0.18em] text-[#3d4a42]">
+                  {heroCopy.typeLabel}
+                </label>
+                <div className="relative">
+                  <select
+                    value={formData.businessType}
+                    onChange={event => updateField('businessType', event.target.value)}
+                    className="w-full appearance-none rounded-2xl border border-[#bccac0] bg-white px-4 py-4 pr-12 text-[15px] text-[#171d19] outline-none transition-colors focus:border-[#1a2e1a]"
+                  >
+                    {businessTypes.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option[selectedLang === 'en' ? 'en' : 'sw']}
+                      </option>
+                    ))}
+                  </select>
+                  <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M7 10l5 5 5-5" stroke="#3d4a42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                {errors.businessType ? <p className="mt-2 text-[12px] font-medium text-[#dc2626]">{errors.businessType}</p> : null}
+              </div>
 
               <button
-                type="button"
-                onClick={handleContinueLanguage}
-                disabled={!selectedLang}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl text-[16px] text-white"
-                style={{
-                  background: selectedLang ? '#006948' : '#7aa999',
-                  paddingTop: '17px',
-                  paddingBottom: '16px',
-                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
-                  transition: 'background 200ms',
-                }}
+                type="submit"
+                disabled={isSaving}
+                className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1a2e1a] px-5 py-4 text-[15px] font-bold text-white shadow-[0_16px_28px_rgba(26,46,26,0.18)] transition-colors hover:bg-[#132513] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                <span>Endelea / Continue</span>
+                <span>{heroCopy.continue}</span>
                 <ArrowRightIcon />
               </button>
+            </form>
+
+            <div className="mt-6 flex items-center justify-between text-[12px] text-[#6b7280]">
+              <span>{selectedLang === 'en' ? 'Saved locally for offline use.' : 'Imehifadhiwa kwenye kifaa kwa matumizi ya offline.'}</span>
+              <span className="font-semibold text-[#1a2e1a]">{businessTypeLabel}</span>
             </div>
-          ) : (
-            <>
-              <h3 className="mt-10 text-[24px] font-extrabold text-[#171d19] leading-[1.2]">{t('welcomeTitle')}</h3>
-              <p className="mt-2 text-[16px] text-[#3d4a42] leading-normal">{t('welcomeSubtitle')}</p>
-              <Stepper currentStep={currentStep} />
-
-              {currentStep === 1 && (
-                <form className="mt-9.75 flex flex-col gap-3.75" onSubmit={e => e.preventDefault()}>
-                  <div>
-                    <label className="mb-[8.59px] block text-[14px] font-semibold uppercase tracking-[0.7px] text-[#3d4a42]">
-                      {t('businessNameLabel')}
-                    </label>
-                    <input
-                      value={formData.shopName}
-                      onChange={e => updateField('shopName', e.target.value)}
-                      className={baseFieldClass}
-                      placeholder={t('businessNamePlaceholder')}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-[8.59px] block text-[14px] font-semibold uppercase tracking-[0.7px] text-[#3d4a42]">
-                      {t('phoneLabel')}
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[16px] text-[#3d4a42]">+254</span>
-                      <input
-                        value={formData.phone}
-                        onChange={e => updateField('phone', e.target.value)}
-                        placeholder={t('phonePlaceholder')}
-                        className={`${baseFieldClass} pl-15.25 placeholder-[#6b7280]`}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-[8.59px] block text-[14px] font-semibold uppercase tracking-[0.7px] text-[#3d4a42]">
-                      {t('businessTypeLabel')}
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={formData.businessType}
-                        onChange={e => updateField('businessType', e.target.value)}
-                        className={`${baseFieldClass} appearance-none pr-12`}
-                      >
-                        <option value="retail">{t('retailShop')}</option>
-                        <option value="hardware">{t('hardware')}</option>
-                        <option value="salon">{t('salon')}</option>
-                        <option value="pharmacy">{t('pharmacy')}</option>
-                        <option value="cafe">{t('cafe')}</option>
-                        <option value="other">{t('other')}</option>
-                      </select>
-                      <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M7 10l5 5 5-5" stroke="#3d4a42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#006948] text-[16px] text-white transition-colors hover:bg-[#005a3d]"
-                    style={{
-                      paddingTop: '17px',
-                      paddingBottom: '16px',
-                      boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
-                    }}
-                  >
-                    <span>{t('continue')}</span>
-                    <ArrowRightIcon />
-                  </button>
-                </form>
-              )}
-
-              {currentStep === 2 && (
-                <form className="mt-9.75 flex flex-col gap-3.75" onSubmit={e => e.preventDefault()}>
-                  <div>
-                    <label className="mb-[8.59px] block text-[14px] font-semibold uppercase tracking-[0.7px] text-[#3d4a42]">
-                      {t('currencyLabel')}
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={formData.currency}
-                        onChange={e => updateField('currency', e.target.value)}
-                        className={`${baseFieldClass} appearance-none pr-12`}
-                      >
-                        {currencyOptions.map(option => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                      <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M7 10l5 5 5-5" stroke="#3d4a42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-[8.59px] block text-[14px] font-semibold uppercase tracking-[0.7px] text-[#3d4a42]">
-                      {t('countyLabel')}
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={formData.county}
-                        onChange={e => updateField('county', e.target.value)}
-                        className={`${baseFieldClass} appearance-none pr-12`}
-                      >
-                        {countyOptions.map(option => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                      <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M7 10l5 5 5-5" stroke="#3d4a42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#006948] text-[16px] text-white transition-colors hover:bg-[#005a3d]"
-                    style={{
-                      paddingTop: '17px',
-                      paddingBottom: '16px',
-                      boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
-                    }}
-                  >
-                    <span>{t('continue')}</span>
-                    <ArrowRightIcon />
-                  </button>
-                </form>
-              )}
-
-              {currentStep === 3 && (
-                <div className="mt-9.75">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#006948]">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M20 7 10 17l-5-5" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <h4 className="mt-5 text-center text-[24px] font-bold text-[#171d19]">{t('doneTitle')}</h4>
-                  <p className="mt-2 text-center text-[16px] text-[#3d4a42]">{t('doneSubtitle')}</p>
-
-                  <div className="mt-6 rounded-2xl bg-[#eff5ef] p-5 text-[14px] text-[#3d4a42]">
-                    <p><span className="font-semibold text-[#171d19]">Shop name:</span> {formData.shopName || '-'}</p>
-                    <p className="mt-1"><span className="font-semibold text-[#171d19]">Phone:</span> {formData.phone ? `+254 ${formData.phone}` : '-'}</p>
-                    <p className="mt-1"><span className="font-semibold text-[#171d19]">Business type:</span> {businessTypeLabel}</p>
-                    <p className="mt-1"><span className="font-semibold text-[#171d19]">County:</span> {formData.county}</p>
-                    <p className="mt-1"><span className="font-semibold text-[#171d19]">Currency:</span> {formData.currency}</p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => navigate('/dashboard')}
-                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#006948] text-[16px] text-white transition-colors hover:bg-[#005a3d]"
-                    style={{
-                      paddingTop: '17px',
-                      paddingBottom: '16px',
-                      boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
-                    }}
-                  >
-                    <span>{t('goDashboard')}</span>
-                    <ArrowRightIcon />
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+          </div>
+        </section>
       </main>
     </div>
   );

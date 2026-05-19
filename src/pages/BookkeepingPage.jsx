@@ -73,7 +73,7 @@ export default function BookkeepingPage() {
     <div
       className="min-h-screen bg-[#eff5ef] text-[#171d19] relative"
       style={{
-        fontFamily: '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+        fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         backgroundImage: `linear-gradient(180deg, rgba(239,245,239,0.92), rgba(239,245,239,0.92)), url(${image2})`,
         backgroundSize: 'cover',
         backgroundPosition: 'top left',
@@ -84,13 +84,13 @@ export default function BookkeepingPage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-63 lg:pb-8">
+      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-60 lg:pb-8">
         <OfflineBanner />
 
         <div className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-[28px] font-extrabold text-[#171d19]">{t('bookkeeping')}</h1>
-            <p className="mt-1 text-[16px] text-[#3d4a42]">{t('bookkeepingSubtitle')}</p>
+            <h1 className="text-[24px] font-extrabold text-[#171d19] lg:text-[28px]">{t('bookkeeping')}</h1>
+            <p className="mt-1 text-[14px] text-[#3d4a42] lg:text-[16px]">{t('bookkeepingSubtitle')}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -149,7 +149,7 @@ export default function BookkeepingPage() {
             </div>
 
             <div className="hidden md:block">
-              <div className="grid grid-cols-12 gap-3 border-b border-[#e5e7eb] bg-[#f9fafb] px-6 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
+              <div className="grid grid-cols-12 gap-4 border-b border-[#e5e7eb] bg-[#f9fafb] px-8 py-4 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
                 <div className="col-span-2">TAREHE</div>
                 <div className="col-span-5">MAELEZO</div>
                 <div className="col-span-2">JAMII</div>
@@ -160,11 +160,11 @@ export default function BookkeepingPage() {
                 {transactions.map(row => {
                   const pill = categoryPill[row.category] || categoryPill.Nyingine;
                   return (
-                    <div key={`${row.date}-${row.description}`} className="grid grid-cols-12 gap-3 px-6 py-4 text-[14px] hover:bg-[#f9fafb]">
+                    <div key={`${row.date}-${row.description}`} className="grid grid-cols-12 gap-4 px-8 py-4 text-[14px] hover:bg-[#f9fafb]">
                       <div className="col-span-2 font-medium text-[#171d19]">{row.date}</div>
                       <div className="col-span-5 font-semibold text-[#171d19]">{row.description}</div>
                       <div className="col-span-2">
-                        <span className="inline-flex rounded-full px-2.5 py-1 text-[12px] font-semibold" style={{ backgroundColor: pill.bg, color: pill.text }}>
+                        <span className="inline-flex rounded-full px-3 py-1.5 text-[12px] font-semibold whitespace-nowrap" style={{ backgroundColor: pill.bg, color: pill.text }}>
                           {row.category}
                         </span>
                       </div>
@@ -176,7 +176,7 @@ export default function BookkeepingPage() {
                 })}
               </div>
 
-              <div className="flex items-center justify-between border-t border-[#f3f4f6] px-6 py-3.5">
+              <div className="flex items-center justify-between border-t border-[#f3f4f6] px-8 py-4">
                 <p className="text-[13px] text-[#6b7280]">{lang === 'en' ? 'Showing 6 of 124' : 'Inaonyesha 6 kati ya 124'}</p>
                 <div className="flex items-center gap-2">
                   <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e5e7eb] text-[#6b7280]">‹</button>
@@ -198,7 +198,7 @@ export default function BookkeepingPage() {
                         <p className="text-[13px] text-[#6b7280]">{row.date}</p>
                         <h4 className="mt-1 text-[14px] font-semibold text-[#171d19]">{row.description}</h4>
                       </div>
-                      <span className="inline-flex rounded-full px-2.5 py-1 text-[12px] font-semibold" style={{ backgroundColor: pill.bg, color: pill.text }}>
+                      <span className="inline-flex rounded-full px-3 py-1.5 text-[12px] font-semibold whitespace-nowrap" style={{ backgroundColor: pill.bg, color: pill.text }}>
                         {row.category}
                       </span>
                     </div>

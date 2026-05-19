@@ -79,7 +79,7 @@ export default function OfflinePage() {
     <div
       className="min-h-screen bg-[#eff5ef] text-[#171d19] relative"
       style={{
-        fontFamily: '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+        fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         backgroundImage: `linear-gradient(180deg, rgba(239,245,239,0.92), rgba(239,245,239,0.92)), url(${heroImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'bottom center',
@@ -90,12 +90,12 @@ export default function OfflinePage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-63 lg:pb-8">
+      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-60 lg:pb-8">
         <OfflineBanner />
 
         <div className="mb-6 mt-4">
-          <h1 className="text-[28px] font-extrabold text-[#171d19]">{t('offline')}</h1>
-          <p className="mt-1 text-[16px] text-[#3d4a42]">{t('offlineSubtitle')}</p>
+          <h1 className="text-[24px] font-extrabold text-[#171d19] lg:text-[28px]">{t('offline')}</h1>
+          <p className="mt-1 text-[14px] text-[#3d4a42] lg:text-[16px]">{t('offlineSubtitle')}</p>
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -165,7 +165,7 @@ export default function OfflinePage() {
                         key={method}
                         type="button"
                         onClick={() => setPaymentMethod(method)}
-                        className="rounded-full border px-3 py-2 text-[13px] font-semibold transition-colors"
+                        className="rounded-full border px-4 py-2.5 text-[13px] font-semibold transition-colors whitespace-nowrap"
                         style={{
                           backgroundColor: active ? '#006948' : '#fff',
                           borderColor: active ? '#006948' : '#bccac0',
@@ -236,7 +236,7 @@ export default function OfflinePage() {
                       <ClockIcon />
                       <span className="text-[13px] text-[#3d4a42]">{item}</span>
                     </div>
-                    <span className="rounded-full bg-[#fef9c3] px-2.5 py-1 text-[11px] font-semibold text-[#854d0e]">
+                    <span className="rounded-full bg-[#fef9c3] px-3 py-1.5 text-[11px] font-semibold text-[#854d0e] whitespace-nowrap">
                       {lang === 'en' ? 'Pending' : 'Inasubiri'}
                     </span>
                   </div>

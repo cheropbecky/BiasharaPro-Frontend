@@ -95,7 +95,7 @@ export default function InventoryPage() {
     <div
       className="min-h-screen bg-[#eff5ef] text-[#171d19] relative"
       style={{
-        fontFamily: '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+        fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         backgroundImage: `linear-gradient(180deg, rgba(239,245,239,0.92), rgba(239,245,239,0.92)), url(${image3})`,
         backgroundSize: 'cover',
         backgroundPosition: 'bottom left',
@@ -106,13 +106,13 @@ export default function InventoryPage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-63 lg:pb-8 relative">
+      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-60 lg:pb-8 relative">
         <OfflineBanner />
 
         <div className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-[28px] font-extrabold text-[#171d19]">{t('inventory')}</h1>
-            <p className="mt-1 text-[16px] text-[#3d4a42]">{t('inventorySubtitle')}</p>
+            <h1 className="text-[24px] font-extrabold text-[#171d19] lg:text-[28px]">{t('inventory')}</h1>
+            <p className="mt-1 text-[14px] text-[#3d4a42] lg:text-[16px]">{t('inventorySubtitle')}</p>
           </div>
 
           <button
@@ -177,7 +177,7 @@ export default function InventoryPage() {
 
         <section className="overflow-hidden rounded-2xl border border-[rgba(226,232,240,0.5)] bg-white">
           <div className="hidden md:block">
-            <div className="grid grid-cols-12 gap-3 border-b border-[#e5e7eb] bg-[#f9fafb] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
+            <div className="grid grid-cols-12 gap-4 border-b border-[#e5e7eb] bg-[#f9fafb] px-8 py-4 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
               <div className="col-span-3">BIDHAA / PRODUCT</div>
               <div className="col-span-2">JAMII / CATEGORY</div>
               <div className="col-span-1">BEI YA KUNUNUA</div>
@@ -192,7 +192,7 @@ export default function InventoryPage() {
               {filtered.map(item => {
                 const badgeStatus = item.status === 'in-stock' ? 'income' : item.status;
                 return (
-                  <div key={item.name} className="grid grid-cols-12 gap-3 px-5 py-3.5 text-[14px] text-[#171d19] transition-colors hover:bg-[#f9fafb]">
+                  <div key={item.name} className="grid grid-cols-12 gap-4 px-8 py-4 text-[14px] text-[#171d19] transition-colors hover:bg-[#f9fafb]">
                     <div className="col-span-3 font-semibold">{item.name}</div>
                     <div className="col-span-2 text-[#6b7280]">{item.category}</div>
                     <div className="col-span-1 font-medium">Ksh {item.buy}</div>
@@ -215,7 +215,7 @@ export default function InventoryPage() {
               })}
             </div>
 
-            <div className="flex items-center justify-between border-t border-[#f3f4f6] px-5 py-3.5">
+            <div className="flex items-center justify-between border-t border-[#f3f4f6] px-8 py-4">
               <p className="text-[13px] text-[#6b7280]">{t('showCount')}</p>
               <div className="flex items-center gap-2">
                 <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e5e7eb] text-[#6b7280]">‹</button>

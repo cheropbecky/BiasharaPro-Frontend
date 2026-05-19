@@ -79,7 +79,7 @@ export default function ExpensesPage() {
     <div
       className="min-h-screen bg-[#eff5ef] text-[#171d19] relative"
       style={{
-        fontFamily: '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+        fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         backgroundImage: `linear-gradient(180deg, rgba(239,245,239,0.90), rgba(239,245,239,0.90)), url(${image1})`,
         backgroundSize: 'cover',
         backgroundPosition: 'top right',
@@ -90,13 +90,13 @@ export default function ExpensesPage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-63 lg:pb-8 relative">
+      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-60 lg:pb-8 relative">
         <OfflineBanner />
 
         <div className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-[28px] font-extrabold text-[#171d19]">{lang === 'en' ? 'Expenses' : 'Matumizi'}</h1>
-            <p className="mt-1 text-[16px] text-[#3d4a42]">{lang === 'en' ? 'Track all your expenses.' : 'Fuatilia matumizi yako yote.'}</p>
+            <h1 className="text-[24px] font-extrabold text-[#171d19] lg:text-[28px]">{lang === 'en' ? 'Expenses' : 'Matumizi'}</h1>
+            <p className="mt-1 text-[14px] text-[#3d4a42] lg:text-[16px]">{lang === 'en' ? 'Track all your expenses.' : 'Fuatilia matumizi yako yote.'}</p>
           </div>
 
           <button
@@ -155,31 +155,31 @@ export default function ExpensesPage() {
           </div>
 
           <div className="hidden md:block">
-            <div className="grid grid-cols-12 gap-3 border-b border-[#e5e7eb] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
-              <div className="col-span-2">TAREHE / DATE</div>
+            <div className="grid grid-cols-12 gap-4 border-b border-[#e5e7eb] px-8 py-4 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
+              <div className="col-span-1">TAREHE / DATE</div>
               <div className="col-span-4">MAELEZO / DESCRIPTION</div>
               <div className="col-span-2">JAMII / CATEGORY</div>
               <div className="col-span-2">KIASI / AMOUNT</div>
-              <div className="col-span-2">HALI / STATUS</div>
+              <div className="col-span-3">HALI / STATUS</div>
             </div>
 
             <div className="divide-y divide-[#f3f4f6]">
               {expenseRows.map(row => {
                 const style = categoryPill[row.category] || categoryPill.Nyingine;
                 return (
-                  <div key={`${row.date}-${row.description}`} className="grid grid-cols-12 gap-3 px-5 py-3.5 text-[14px] text-[#171d19] transition-colors hover:bg-[#f9fafb]">
-                    <div className="col-span-2 text-[#6b7280]">{row.date}</div>
+                  <div key={`${row.date}-${row.description}`} className="grid grid-cols-12 gap-4 px-8 py-4 text-[14px] text-[#171d19] transition-colors hover:bg-[#f9fafb]">
+                    <div className="col-span-1 text-[#6b7280]">{row.date}</div>
                     <div className="col-span-4 font-medium">{row.description}</div>
                     <div className="col-span-2">
                       <span
-                        className="inline-flex rounded-full px-2.5 py-1 text-[12px] font-semibold"
+                        className="inline-flex rounded-full px-3 py-1.5 text-[12px] font-semibold whitespace-nowrap"
                         style={{ backgroundColor: style.bg, color: style.text }}
                       >
                         {row.category}
                       </span>
                     </div>
                     <div className="col-span-2 font-bold text-[#dc2626]">{row.amount}</div>
-                    <div className="col-span-2">
+                    <div className="col-span-3">
                       <Badge status={row.status === 'paid' ? 'income' : 'low-stock'}>
                         {row.status === 'paid' ? (lang === 'en' ? 'Paid' : 'Imelipwa') : (lang === 'en' ? 'Pending' : 'Inangoja')}
                       </Badge>
@@ -189,7 +189,7 @@ export default function ExpensesPage() {
               })}
             </div>
 
-            <div className="flex items-center justify-between border-t border-[#f3f4f6] px-5 py-3.5">
+            <div className="flex items-center justify-between border-t border-[#f3f4f6] px-8 py-4">
               <p className="text-[13px] text-[#6b7280]">{lang === 'en' ? 'Showing 10 of 32' : 'Inaonyesha 10 kati ya 32'}</p>
               <div className="flex items-center gap-2">
                 <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e5e7eb] text-[#6b7280]">‹</button>
@@ -216,7 +216,7 @@ export default function ExpensesPage() {
                     </Badge>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="inline-flex rounded-full px-2.5 py-1 text-[12px] font-semibold" style={{ backgroundColor: style.bg, color: style.text }}>
+                    <span className="inline-flex rounded-full px-3 py-1.5 text-[12px] font-semibold whitespace-nowrap" style={{ backgroundColor: style.bg, color: style.text }}>
                       {row.category}
                     </span>
                     <p className="text-[16px] font-bold text-[#dc2626]">{row.amount}</p>
