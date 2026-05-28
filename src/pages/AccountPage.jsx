@@ -7,6 +7,7 @@ import OfflineBanner from '../components/OfflineBanner';
 import useLang from '../hooks/useLang';
 import image1 from '../assets/image1.jpg';
 import image2 from '../assets/image2.jpg';
+import useSidebar from '../hooks/useSidebar';
 
 const paymentHistory = [
   { date: 'Nov 24, 2024', amount: 'Ksh 500', mpesa: 'QJH5K9', status: 'Paid' },
@@ -82,6 +83,7 @@ function IconBubble({ children, colorClass }) {
 
 export default function AccountPage() {
   const { t, lang } = useLang();
+  const { collapsed } = useSidebar();
 
   return (
     <div
@@ -98,7 +100,7 @@ export default function AccountPage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-60 lg:pb-8">
+      <main className={`px-4 pb-20 pt-20 lg:px-8 ${collapsed ? 'lg:pl-20' : 'lg:pl-60'} lg:pb-8 transition-all duration-200 ease-in-out`}>
         <OfflineBanner />
 
         <div className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-4">

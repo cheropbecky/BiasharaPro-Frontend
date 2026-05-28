@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react';
-
-const STORAGE_KEY = 'biasharapro_lang';
+import { useEffect, useMemo, useState } from 'react';
+import { LANGUAGE_UPDATED_EVENT, readStoredLanguage, writeStoredLanguage } from '../utils/preferences';
 
 const translations = {
   en: {
@@ -177,16 +176,36 @@ const translations = {
 
 export default function useLang() {
   const [lang, setLang] = useState(() => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(STORAGE_KEY);
+    return readStoredLanguage();
   });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const syncLanguage = (value) => {
+      setLang(value === 'en' ? 'en' : 'sw');
+    };
+
+    const handleStorage = (event) => {
+      if (event.key !== 'biasharapro_language') return;
+      syncLanguage(event.newValue);
+    };
+
+    const handleLanguageUpdated = (event) => syncLanguage(event.detail);
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener(LANGUAGE_UPDATED_EVENT, handleLanguageUpdated);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener(LANGUAGE_UPDATED_EVENT, handleLanguageUpdated);
+    };
+  }, []);
 
   const switchLang = (nextLang) => {
     const safeLang = nextLang === 'en' ? 'en' : 'sw';
     setLang(safeLang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, safeLang);
-    }
+    writeStoredLanguage(safeLang);
   };
 
   const t = useMemo(() => {

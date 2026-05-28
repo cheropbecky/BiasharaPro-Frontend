@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ALERTS_COUNT_KEY, PROFILE_KEY, routeMeta } from './navConfig';
+import { PROFILE_UPDATED_EVENT, readStoredProfile } from '../../utils/preferences';
 
 const NavigationContext = createContext(null);
 
@@ -34,10 +35,7 @@ export function NavigationProvider({ children }) {
     return localStorage.getItem('biasharapro_sidebar_collapsed') === 'true';
   });
 
-  const profile = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    return safeParse(localStorage.getItem(PROFILE_KEY));
-  }, [location.pathname]);
+  const [profile, setProfile] = useState(() => readStoredProfile());
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -75,6 +73,23 @@ export function NavigationProvider({ children }) {
     const timer = window.setTimeout(refresh, 700);
     return () => window.clearTimeout(timer);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const syncProfile = () => setProfile(readStoredProfile());
+    const handleStorage = (event) => {
+      if (event.key === PROFILE_KEY) syncProfile();
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener(PROFILE_UPDATED_EVENT, syncProfile);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener(PROFILE_UPDATED_EVENT, syncProfile);
+    };
+  }, []);
 
   useEffect(() => {
     if (!toast) return undefined;

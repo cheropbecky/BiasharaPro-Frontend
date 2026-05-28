@@ -7,6 +7,7 @@ import OfflineBanner from '../components/OfflineBanner';
 import useLang from '../hooks/useLang';
 import image3 from '../assets/image3.jpg';
 import heroImage from '../assets/hero.jpg';
+import useSidebar from '../hooks/useSidebar';
 const categoryColors = {
   Kodi: { bg: '#ede9fe', text: '#6d28d9' },
   Umeme: { bg: '#fef9c3', text: '#854d0e' },
@@ -70,6 +71,7 @@ export default function AlertsPage() {
     amount: '',
     date: new Date().toISOString().slice(0, 10),
   });
+  const { collapsed } = useSidebar();
 
   const recentAlerts = useMemo(
     () => ({
@@ -94,7 +96,7 @@ export default function AlertsPage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-60 lg:pb-8">
+      <main className={`px-4 pb-20 pt-20 lg:px-8 ${collapsed ? 'lg:pl-20' : 'lg:pl-60'} lg:pb-8 transition-all duration-200 ease-in-out`}>
         <OfflineBanner />
 
         <div className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-4">

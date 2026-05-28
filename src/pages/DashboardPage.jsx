@@ -7,18 +7,7 @@ import Badge from '../components/Badge';
 import OfflineBanner from '../components/OfflineBanner';
 import image2 from '../assets/image2.jpg';
 import image3 from '../assets/image3.jpg';
-
-const PROFILE_KEY = 'biasharapro_profile';
-
-function getProfile() {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    return JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
-  } catch {
-    return null;
-  }
-}
+import { useNavigationSystem } from '../components/navigation/NavigationProvider';
 
 function CartIcon() {
   return (
@@ -84,9 +73,12 @@ const salesRows = [
   ['13:20', 'Maziwa 500ml', '2', 'Ksh 136', 'Airtel'],
 ];
 
+import useSidebar from '../hooks/useSidebar';
+
 export default function DashboardPage() {
-  const profile = getProfile();
+  const { profile } = useNavigationSystem();
   const storeName = profile?.shopName || 'Wanjiku Stores';
+  const { collapsed } = useSidebar();
 
   return (
     <div
@@ -109,7 +101,7 @@ export default function DashboardPage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-16 lg:px-8 lg:pl-60 lg:pb-8 relative">
+      <main className={`px-4 pb-20 pt-16 lg:px-8 ${collapsed ? 'lg:pl-20' : 'lg:pl-60'} lg:pb-8 relative transition-all duration-200 ease-in-out`}>
         <div className="mb-6 flex flex-wrap items-center gap-3 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
           <span className="rounded-full bg-white px-3 py-1 shadow-sm">BiasharaPro Overview</span>
           <span className="rounded-full bg-white px-3 py-1 shadow-sm">Live</span>

@@ -1,22 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import Badge from '../components/Badge';
 import OfflineBanner from '../components/OfflineBanner';
 import useLang from '../hooks/useLang';
+import useSidebar from '../hooks/useSidebar';
 import image3 from '../assets/image3.jpg';
 import heroImage from '../assets/hero.jpg';
-const products = [
-  { name: 'Unga Pembe 2kg', category: 'Chakula', buy: 120, sell: 155, stock: 48, min: 20, status: 'in-stock' },
-  { name: 'Sukari Mumias 1kg', category: 'Chakula', buy: 100, sell: 128, stock: 0, min: 10, status: 'out-of-stock' },
-  { name: 'Mafuta Elianto 2L', category: 'Chakula', buy: 340, sell: 420, stock: 4, min: 10, status: 'low-stock' },
-  { name: 'Maziwa 500ml', category: 'Vinywaji', buy: 52, sell: 68, stock: 22, min: 15, status: 'in-stock' },
-  { name: 'Sabuni Omo 1kg', category: 'Usafi', buy: 245, sell: 300, stock: 7, min: 10, status: 'low-stock' },
-  { name: 'Mchele Pishori 1kg', category: 'Chakula', buy: 130, sell: 165, stock: 35, min: 20, status: 'in-stock' },
-  { name: 'Chumvi 500g', category: 'Chakula', buy: 18, sell: 25, stock: 60, min: 30, status: 'in-stock' },
-  { name: 'Siagi Blue Band', category: 'Chakula', buy: 88, sell: 115, stock: 0, min: 8, status: 'out-of-stock' },
-];
+import { getProducts, addProduct, updateProduct, deleteProduct } from '../db/sqlite';
 
 const inputClass =
   'h-11 w-full rounded-xl border border-[#bccac0] bg-white px-4 text-[14px] text-[#171d19] placeholder:text-[#6b7280] focus:outline-none focus:border-[#006948]';
@@ -72,6 +64,7 @@ export default function InventoryPage() {
   const [category, setCategory] = useState('all');
   const [status, setStatus] = useState('all');
   const [showModal, setShowModal] = useState(false);
+  const [products, setProducts] = useState([]);
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -81,6 +74,8 @@ export default function InventoryPage() {
     initial: '',
     min: '',
   });
+  const [editingId, setEditingId] = useState(null);
+  const { collapsed } = useSidebar();
 
   const filtered = useMemo(() => {
     return products.filter(item => {
@@ -89,7 +84,17 @@ export default function InventoryPage() {
       const matchesStatus = status === 'all' || item.status === status;
       return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [search, category, status]);
+  }, [products, search, category, status]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      const rows = await getProducts();
+      if (mounted) setProducts(rows);
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <div
@@ -106,7 +111,7 @@ export default function InventoryPage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-60 lg:pb-8 relative">
+      <main className={`px-4 pb-20 pt-20 lg:px-8 ${collapsed ? 'lg:pl-20' : 'lg:pl-60'} lg:pb-8 relative transition-all duration-200 ease-in-out`}>
         <OfflineBanner />
 
         <div className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-4">
@@ -159,15 +164,15 @@ export default function InventoryPage() {
         <div className="mb-5 flex flex-wrap gap-3">
           <div className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-4 py-2 text-[13px] font-semibold text-[#171d19]">
             <span className="h-2 w-2 rounded-full bg-[#16a34a]" />
-            <span>32 {t('totalProducts')}</span>
+            <span>{products.length} {t('totalProducts')}</span>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-4 py-2 text-[13px] font-semibold text-[#171d19]">
             <span className="h-2 w-2 rounded-full bg-[#f59e0b]" />
-            <span>5 {t('lowStock')}</span>
+            <span>{products.filter(p=>p.status==='low-stock').length} {t('lowStock')}</span>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white px-4 py-2 text-[13px] font-semibold text-[#171d19]">
             <span className="h-2 w-2 rounded-full bg-[#dc2626]" />
-            <span>2 {t('outOfStock')}</span>
+            <span>{products.filter(p=>p.status==='out-of-stock').length} {t('outOfStock')}</span>
           </div>
         </div>
 
@@ -192,7 +197,7 @@ export default function InventoryPage() {
               {filtered.map(item => {
                 const badgeStatus = item.status === 'in-stock' ? 'income' : item.status;
                 return (
-                  <div key={item.name} className="grid grid-cols-12 gap-4 px-8 py-4 text-[14px] text-[#171d19] transition-colors hover:bg-[#f9fafb]">
+                  <div key={item.id} className="grid grid-cols-12 gap-4 px-8 py-4 text-[14px] text-[#171d19] transition-colors hover:bg-[#f9fafb]">
                     <div className="col-span-3 font-semibold">{item.name}</div>
                     <div className="col-span-2 text-[#6b7280]">{item.category}</div>
                     <div className="col-span-1 font-medium">Ksh {item.buy}</div>
@@ -203,10 +208,29 @@ export default function InventoryPage() {
                       <Badge status={badgeStatus}>{statusLabel(item.status, lang)}</Badge>
                     </div>
                     <div className="col-span-1 flex items-center gap-3 text-[#9ca3af]">
-                      <button type="button" className="transition-colors hover:text-[#006948]" aria-label={`Edit ${item.name}`}>
+                      <button
+                        type="button"
+                        className="transition-colors hover:text-[#006948]"
+                        aria-label={`Edit ${item.name}`}
+                        onClick={() => {
+                          setEditingId(item.id);
+                          setNewProduct({ name: item.name, category: item.category, buy: item.buy, sell: item.sell, initial: item.stock, min: item.min });
+                          setShowModal(true);
+                        }}
+                      >
                         <EditIcon />
                       </button>
-                      <button type="button" className="transition-colors hover:text-[#dc2626]" aria-label={`Delete ${item.name}`}>
+                      <button
+                        type="button"
+                        className="transition-colors hover:text-[#dc2626]"
+                        aria-label={`Delete ${item.name}`}
+                        onClick={async () => {
+                          if (!window.confirm(`Delete ${item.name}?`)) return;
+                          await deleteProduct(item.id);
+                          const rows = await getProducts();
+                          setProducts(rows);
+                        }}
+                      >
                         <TrashIcon />
                       </button>
                     </div>
@@ -231,7 +255,7 @@ export default function InventoryPage() {
             {filtered.map(item => {
               const badgeStatus = item.status === 'in-stock' ? 'income' : item.status;
               return (
-                <article key={`${item.name}-mobile`} className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+                <article key={`${item.id}-mobile`} className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="text-[15px] font-semibold text-[#171d19]">{item.name}</h3>
@@ -269,7 +293,7 @@ export default function InventoryPage() {
           <div className="w-full max-w-120 rounded-3xl bg-white p-8 shadow-2xl">
             <div className="mb-5 flex items-center justify-between gap-3">
               <h2 className="text-[20px] font-bold text-[#171d19]">
-                {lang === 'en' ? 'Add Product' : 'Ongeza Bidhaa'}
+                {editingId ? (lang === 'en' ? 'Edit Product' : 'Hariri Bidhaa') : (lang === 'en' ? 'Add Product' : 'Ongeza Bidhaa')}
               </h2>
               <button type="button" onClick={() => setShowModal(false)} className="text-[#9ca3af] hover:text-[#171d19]" aria-label="Close modal">
                 ✕
@@ -318,7 +342,7 @@ export default function InventoryPage() {
               />
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-3">
+              <div className="mt-6 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
@@ -328,10 +352,29 @@ export default function InventoryPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowModal(false)}
+                onClick={async () => {
+                  const payload = {
+                    name: newProduct.name || 'Untitled',
+                    category: newProduct.category || 'Chakula',
+                    buy: Number(newProduct.buy) || 0,
+                    sell: Number(newProduct.sell) || 0,
+                    initial: Number(newProduct.initial) || 0,
+                    min: Number(newProduct.min) || 0,
+                  };
+                  if (editingId) {
+                    await updateProduct(editingId, { name: payload.name, category: payload.category, buy: payload.buy, sell: payload.sell, stock: payload.initial, min: payload.min });
+                    setEditingId(null);
+                  } else {
+                    await addProduct(payload);
+                  }
+                  const rows = await getProducts();
+                  setProducts(rows);
+                  setNewProduct({ name: '', category: 'Chakula', buy: '', sell: '', initial: '', min: '' });
+                  setShowModal(false);
+                }}
                 className="rounded-xl bg-[#006948] px-4 py-2.5 text-[14px] font-semibold text-white"
               >
-                {lang === 'en' ? 'Save' : 'Hifadhi'}
+                {editingId ? (lang === 'en' ? 'Save Changes' : 'Hifadhi Mabadiliko') : (lang === 'en' ? 'Save' : 'Hifadhi')}
               </button>
             </div>
           </div>

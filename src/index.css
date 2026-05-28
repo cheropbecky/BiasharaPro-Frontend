@@ -24,3 +24,11 @@ select,
 textarea {
 	font: inherit;
 }
+
+/* Card surface helper matching the design tokens */
+button,
+input,
+select,
+textarea {
+	font: inherit;
+}

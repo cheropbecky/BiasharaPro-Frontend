@@ -10,10 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@sqlite.org/sqlite-wasm": "^3.53.0-build1",
     "@tailwindcss/vite": "^4.2.4",
+    "install": "^0.13.0",
+    "npm": "^11.15.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.15.0",
+    "sql.js": "^1.14.1",
     "tailwindcss": "^4.2.4"
   },
   "devDependencies": {

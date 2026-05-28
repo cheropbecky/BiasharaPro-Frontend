@@ -73,6 +73,7 @@ export default function TopBar() {
 
   const profile = storedProfile || getProfile();
   const storeName = profile?.shopName || 'Wanjiku Stores';
+  const avatarUrl = profile?.avatarUrl || image1;
   const title = lang === 'en' ? pageMeta.enTitle : pageMeta.title;
   const showBack = location.pathname !== '/dashboard' && location.pathname !== '/onboarding';
 
@@ -86,7 +87,7 @@ export default function TopBar() {
 
   return (
     <>
-      <header className="fixed left-0 right-0 top-0 z-30 flex  h-[60px] items-center justify-between border-b border-[#E8E2DA] bg-white px-0 shadow-[0_1px_6px_rgba(45,106,79,0.06)] lg:left-60 lg:right-0 lg:px-8">
+      <header className="fixed left-0 right-0 top-0 z-30 flex items-center justify-between border-b border-[#E8E2DA] bg-white px-0 shadow-[0_1px_6px_rgba(45,106,79,0.06)] lg:left-60 lg:right-0 lg:px-8" style={{ height: '60px' }}>
         <div className="flex items-center gap-3 px-4 lg:px-0">
           <button
             type="button"
@@ -121,7 +122,7 @@ export default function TopBar() {
             <button
               type="button"
               onClick={() => navigate('/offline')}
-              className="rounded-[6px] bg-[#FEF9C3] px-3 py-1.5 text-[10px] font-semibold text-[#854D0E]"
+              className="rounded-md bg-[#FEF9C3] px-3 py-1.5 text-[10px] font-semibold text-[#854D0E]"
             >
               ● Offline
             </button>
@@ -139,11 +140,11 @@ export default function TopBar() {
 
           <button
             type="button"
-            onClick={() => navigate('/account')}
+            onClick={() => navigate('/settings')}
             className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-[#2D6A4F]"
             aria-label="Account"
           >
-            <img src={image1} alt="Account avatar" className="h-full w-full object-cover" />
+            <img src={avatarUrl} alt="Account avatar" className="h-full w-full object-cover" />
           </button>
         </div>
       </header>
@@ -151,10 +152,10 @@ export default function TopBar() {
       {mobileDrawerOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button type="button" className="absolute inset-0 bg-black/35" onClick={closeMobileDrawer} aria-label="Close menu" />
-            <div className="absolute left-0 top-0 h-full w-[60%] max-w-[220px] bg-[#1a2e1a] text-[#fcf9f4] shadow-2xl">
+            <div className="absolute left-0 top-0 h-full w-[60%] bg-[#1a2e1a] text-[#fcf9f4] shadow-2xl" style={{ maxWidth: '220px' }}>
             <div className="border-b border-white/10 p-4">
               <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-white/10 text-[11px] font-extrabold text-white">BP</div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-[11px] font-extrabold text-white">BP</div>
                 <div>
                   <div className="text-[15px] font-bold">BiasharaPro</div>
                   <div className="mt-0.5 text-[11px] text-[#A8C4B8]">{storeName}</div>
@@ -177,8 +178,7 @@ export default function TopBar() {
                           navigate(item.to);
                           closeMobileDrawer();
                         }}
-                        className="flex w-full items-center gap-2 rounded-r-[8px] border-l-4 px-2 py-2.5 text-left text-[13px] font-medium text-[#A8C4B8]"
-                      >
+                        className="flex w-full items-center gap-2 rounded-r-lg border-l-4 px-2 py-2.5 text-left text-[13px] font-medium text-[#A8C4B8]"                      >
                         <NavIcon name={item.icon} />
                         <span>{lang === 'en' ? item.labelEn : item.labelSw}</span>
                       </button>
@@ -190,7 +190,7 @@ export default function TopBar() {
 
             <div className="border-t border-dashed border-white/15 p-4">
               <div className="flex items-center gap-2">
-                <img src={image1} alt="Mama Wanjiku" className="h-8 w-8 rounded-full border-2 border-white/30 object-cover" />
+                <img src={avatarUrl} alt="Mama Wanjiku" className="h-8 w-8 rounded-full border-2 border-white/30 object-cover" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[12px] font-bold text-white">Mama Wanjiku</div>
                   <div className="mt-0.5 inline-flex rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-semibold text-white/90">Msingi</div>

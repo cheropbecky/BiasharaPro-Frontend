@@ -7,6 +7,7 @@ import OfflineBanner from '../components/OfflineBanner';
 import useLang from '../hooks/useLang';
 import image2 from '../assets/image2.jpg';
 import image1 from '../assets/image1.jpg';
+import useSidebar from '../hooks/useSidebar';
 
 const categoryPill = {
   Mauzo: { bg: '#dcfce7', text: '#15803d' },
@@ -68,6 +69,7 @@ function GoldCircle({ children }) {
 
 export default function BookkeepingPage() {
   const { t, lang } = useLang();
+  const { collapsed } = useSidebar();
 
   return (
     <div
@@ -84,7 +86,7 @@ export default function BookkeepingPage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-60 lg:pb-8">
+      <main className={`px-4 pb-20 pt-20 lg:px-8 ${collapsed ? 'lg:pl-20' : 'lg:pl-60'} lg:pb-8 transition-all duration-200 ease-in-out`}>
         <OfflineBanner />
 
         <div className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-4">

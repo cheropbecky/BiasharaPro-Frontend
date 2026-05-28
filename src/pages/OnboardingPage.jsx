@@ -1,329 +1,368 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useLang from '../hooks/useLang';
-import heroImage from '../assets/hero.jpg';
+import { useLanguage } from '../context/LanguageContext';
+import { writeStoredProfile } from '../utils/preferences';
+import {
+  Globe,
+  ChevronRight,
+  ChevronLeft,
+  CheckCircle,
+  Building2,
+  Phone,
+  Store,
+  Wallet,
+  Target,
+} from 'lucide-react';
 
 const ONBOARDING_COMPLETE_KEY = 'biasharapro_onboarding_complete';
-const PROFILE_KEY = 'biasharapro_profile';
-
-const businessTypes = [
-  { value: 'retail', en: 'Retail Shop', sw: 'Duka la Rejareja' },
-  { value: 'hardware', en: 'Hardware Store', sw: 'Duka la Hardware' },
-  { value: 'salon', en: 'Salon', sw: 'Saluni' },
-  { value: 'pharmacy', en: 'Pharmacy / Drug Store', sw: 'Madawa / Duka la Dawa' },
-  { value: 'cafe', en: 'Cafe / Restaurant', sw: 'Mkahawa / Cafe' },
-  { value: 'other', en: 'Other', sw: 'Nyingine' },
-];
-
-const languageChoices = [
-  { code: 'en', flag: '🇬🇧', label: 'English', helper: 'Continue in English' },
-  { code: 'sw', flag: '🇰🇪', label: 'Kiswahili', helper: 'Endelea kwa Kiswahili' },
-];
-
-function ArrowRightIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function DotProgress() {
-  return (
-    <div className="flex items-center gap-2" aria-hidden="true">
-      {[0, 1, 2, 3].map(index => (
-        <span
-          key={index}
-          className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: index === 0 ? '#006948' : '#bccac0' }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function getStoredProfile() {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    return JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
-  } catch {
-    return null;
-  }
-}
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
-  const { lang, switchLang, t } = useLang();
-  const [selectedLang, setSelectedLang] = useState(lang === 'en' || lang === 'sw' ? lang : 'sw');
-  const [formData, setFormData] = useState(() => {
-    const profile = getStoredProfile();
-
-    return {
-      shopName: profile?.shopName || 'Mama Wanjiku General Store',
-      phone: profile?.phone || '',
-      businessType: profile?.businessType || 'retail',
-    };
+  const { t, language, switchLanguage } = useLanguage();
+  const [languageSelected, setLanguageSelected] = useState(false);
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    businessName: '',
+    phoneNumber: '',
+    businessType: '',
+    revenue: '',
+    goal: '',
   });
-  const [errors, setErrors] = useState({});
-  const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true') {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-    if (lang === 'en' || lang === 'sw') {
-      setSelectedLang(lang);
-    }
-  }, [lang]);
-
-  const heroCopy = useMemo(() => {
-    if (selectedLang === 'en') {
-      return {
-        heading: 'Grow your business today.',
-        subheading: 'Join thousands of shop owners using BiasharaPro to manage sales and stock with ease.',
-        welcome: 'Welcome to BiasharaPro!',
-        intro: 'Help us understand your business so we can get started.',
-        step: 'Step 1 of 4',
-        nameLabel: 'BUSINESS NAME',
-        phoneLabel: 'PHONE NUMBER',
-        typeLabel: 'BUSINESS TYPE',
-        continue: 'Continue',
-        languageTitle: 'Choose your language',
-      };
-    }
-
-    return {
-      heading: 'Boresha biashara yako leo.',
-      subheading: 'Jiunge na maelfu ya wamiliki wa maduka wanaotumia BiasharaPro kusimamia mauzo na akiba zao kwa urahisi.',
-      welcome: 'Karibu BiasharaPro!',
-      intro: 'Tusaidie kufahamu biashara yako ili tuanze safari yetu.',
-      step: 'Hatua ya 1 kati ya 4',
-      nameLabel: 'JINA LA BIASHARA',
-      phoneLabel: 'NAMBA YA SIMU',
-      typeLabel: 'AINA YA BIASHARA',
-      continue: 'Endelea',
-      languageTitle: 'Chagua lugha yako',
-    };
-  }, [selectedLang]);
-
-  const businessTypeLabel = useMemo(() => {
-    return businessTypes.find(item => item.value === formData.businessType)?.[selectedLang === 'en' ? 'en' : 'sw'] || formData.businessType;
-  }, [formData.businessType, selectedLang]);
-
-  const updateField = (key, value) => {
-    setFormData(previous => ({ ...previous, [key]: value }));
-    setErrors(previous => ({ ...previous, [key]: '' }));
+  const businessTypeOptions = {
+    en: ['Retail Store', 'Service Business', 'Manufacturing', 'Agribusiness', 'Wholesale', 'Other'],
+    sw: ['Duka la Rejareja', 'Biashara ya Huduma', 'Uzalishaji', 'Kilimo Biashara', 'Jumla', 'Nyingine'],
   };
 
-  const validate = () => {
-    const nextErrors = {};
-    const phoneDigits = formData.phone.replace(/\D/g, '');
-
-    if (!formData.shopName.trim()) {
-      nextErrors.shopName = selectedLang === 'en' ? 'Business name is required.' : 'Jina la biashara linahitajika.';
-    }
-
-    if (!phoneDigits || phoneDigits.length < 9) {
-      nextErrors.phone = selectedLang === 'en' ? 'Enter a valid phone number.' : 'Weka namba ya simu iliyo sahihi.';
-    }
-
-    if (!formData.businessType) {
-      nextErrors.businessType = selectedLang === 'en' ? 'Pick a business type.' : 'Chagua aina ya biashara.';
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+  const revenueRangeOptions = {
+    en: ['0 - 50,000 Kes', '50,000 - 200,000 Kes', '200,000 - 500,000 Kes', '500,000+ Kes'],
+    sw: ['0 - 50,000 Kes', '50,000 - 200,000 Kes', '200,000 - 500,000 Kes', '500,000+ Kes'],
   };
 
-  const handleSubmit = event => {
-    event.preventDefault();
+  const businessGoalOptions = {
+    en: ['Track Daily Sales', 'Manage Inventory', 'Generate Reports', 'Accept Digital Payments', 'Get Business Loans'],
+    sw: ['Fuatilia Mauzo ya Kila Siku', 'Simamia Bidhaa', 'Tengeneza Ripoti', 'Pokea Malipo ya Kidijitali', 'Pata Mikopo ya Biashara'],
+  };
 
-    if (!validate()) {
-      return;
+  const stepMeta = [
+    { title: t.step1Title, description: t.step1Desc, icon: Building2 },
+    { title: t.step2Title, description: t.step2Desc, icon: Store },
+    { title: t.step3Title, description: t.step3Desc, icon: Wallet },
+    { title: t.step4Title, description: t.step4Desc, icon: Target },
+  ];
+
+  const stepCounters = [t.step1Of4, t.step2Of4, t.step3Of4, t.step4Of4];
+  const currentStep = stepMeta[step - 1] || stepMeta[0];
+  const currentStepCount = stepCounters[step - 1] || t.step1Of4;
+
+  const handleLanguageSelect = (nextLanguage) => {
+    // debug: ensure handler is called
+    // set local UI state so the selection is visible immediately
+    console.log('Onboarding: selecting language', nextLanguage);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('biasharapro_debug_onboarding_click', nextLanguage);
     }
-
-    setIsSaving(true);
-    switchLang(selectedLang);
-
-    const profile = {
-      shopName: formData.shopName.trim(),
-      phone: formData.phone.replace(/\D/g, ''),
-      businessType: formData.businessType,
-      language: selectedLang,
-      updatedAt: new Date().toISOString(),
-    };
-
+    setLanguageSelected(true);
+    switchLanguage(nextLanguage);
+    // Mark onboarding complete and go straight to dashboard
     if (typeof window !== 'undefined') {
       localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      window.location.replace('/dashboard');
+    } else {
+      navigate('/dashboard');
     }
-
-    navigate('/dashboard', { replace: true });
   };
 
-  return (
-    <div className="min-h-screen bg-[#fafaf9] text-[#171d19] lg:flex">
-      <aside className="relative hidden min-h-screen overflow-hidden lg:block lg:w-[42%] xl:w-[46%]">
-        <img src={heroImage} alt="BiasharaPro shop hero" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(26,46,26,0.86),rgba(26,46,26,0.42))]" />
-        <div className="absolute inset-x-0 bottom-0 p-12 text-white">
-          <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-white/75">BiasharaPro</p>
-          <h1 className="mt-4 max-w-xl text-[48px] font-extrabold leading-[0.98] tracking-[-0.04em]">
-            {heroCopy.heading}
-          </h1>
-          <p className="mt-5 max-w-xl text-[18px] leading-8 text-white/90">{heroCopy.subheading}</p>
-        </div>
-      </aside>
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((previous) => ({ ...previous, [name]: value }));
+  };
 
-      <main className="flex min-h-screen w-full items-start justify-center px-4 py-4 sm:px-6 lg:w-[58%] lg:items-center lg:px-10 lg:py-10 xl:w-[54%]">
-        <section className="w-full max-w-140 overflow-hidden rounded-4xl border border-[rgba(228,228,231,0.9)] bg-white shadow-[0_24px_60px_rgba(26,46,26,0.12)]">
-          <div className="lg:hidden">
-            <div className="relative h-48 overflow-hidden">
-              <img src={heroImage} alt="BiasharaPro shop hero" className="absolute inset-0 h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(26,46,26,0.15),rgba(26,46,26,0.78))]" />
-              <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/75">BiasharaPro</p>
-                <h1 className="mt-2 max-w-sm text-[28px] font-extrabold leading-[1.02] tracking-[-0.03em]">
-                  {heroCopy.heading}
-                </h1>
+  const handleNext = () => setStep((previous) => previous + 1);
+  const handleBack = () => setStep((previous) => previous - 1);
+
+  const handleComplete = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+    }
+
+    writeStoredProfile({
+      shopName: formData.businessName,
+      phoneNumber: formData.phoneNumber,
+      businessType: formData.businessType,
+      revenue: formData.revenue,
+      goal: formData.goal,
+      language,
+      location: '',
+      avatarUrl: '',
+    });
+
+    if (typeof window !== 'undefined') {
+      window.location.replace('/dashboard');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
+  if (!languageSelected) {
+    return (
+      <div
+        className="relative min-h-screen overflow-hidden px-4 py-10 text-[#171d19]"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at top left, rgba(196,98,45,0.10), transparent 30%), radial-gradient(circle at bottom right, rgba(26,46,26,0.14), transparent 34%), linear-gradient(180deg, #fcf9f4 0%, #fafaf9 100%)',
+          fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        }}
+      >
+        <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-2xl items-center justify-center">
+          <div className="w-full rounded-4xl border border-[#e8e1d3] bg-white/95 p-6 shadow-[0_20px_60px_rgba(26,46,26,0.10)] backdrop-blur sm:p-8">
+            <div className="text-center space-y-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#1a2e1a]/10 text-[#1a2e1a]">
+                <Globe className="h-8 w-8" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-extrabold text-[#171d19] sm:text-3xl">{t.chooseLanguage || 'Choose Your Language'}</h1>
+                <p className="mt-2 text-[14px] text-[#4b5a50]">Chagua lugha yako ili uendelee</p>
               </div>
             </div>
-          </div>
 
-          <div className="px-5 pb-6 pt-5 sm:px-7 sm:pb-8 sm:pt-7 lg:px-9 lg:pb-10 lg:pt-9">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1a2e1a] text-white shadow-sm">
-                    <span className="text-[18px] font-extrabold">BP</span>
+            <div className="mt-8 grid gap-4">
+              <button
+                onClick={() => handleLanguageSelect('en')}
+                className="group flex items-center justify-between rounded-2xl border border-[#d8e1d3] bg-[#fafaf9] p-4 transition-all duration-200 hover:border-[#1a2e1a] hover:bg-[#eff5ef]"
+              >
+                <div className="flex items-center gap-4">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1a2e1a]/10 text-sm font-extrabold text-[#1a2e1a]">EN</span>
+                  <div className="text-left">
+                    <p className="font-bold text-[#171d19]">English</p>
+                    <p className="text-xs text-[#6b7280]">Continue in English</p>
                   </div>
-                  <div>
-                    <p className="text-[14px] font-bold text-[#1a2e1a]">BiasharaPro</p>
-                    <p className="text-[12px] text-[#6b7280]">Offline-first retail tools</p>
-                  </div>
                 </div>
-
-                <h2 className="mt-6 text-[24px] font-extrabold leading-tight text-[#171d19] sm:text-[28px]">
-                  {heroCopy.welcome}
-                </h2>
-                <p className="mt-2 max-w-xl text-[15px] leading-7 text-[#3d4a42] sm:text-[16px]">{heroCopy.intro}</p>
-              </div>
-
-              <div className="rounded-2xl border border-[#e5e7eb] bg-[#fafaf9] px-4 py-3 text-left sm:min-w-48">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#6b7280]">{heroCopy.step}</p>
-                <div className="mt-3">
-                  <DotProgress />
-                </div>
-                <p className="mt-3 text-[12px] text-[#6b7280]">{selectedLang === 'en' ? 'One screen, one quick setup.' : 'Skrini moja, usanidi wa haraka.'}</p>
-              </div>
-            </div>
-
-            <div className="mt-6 rounded-[28px] border border-[#eef0ec] bg-[#fcf9f4] p-4 sm:p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#6b7280]">{heroCopy.languageTitle}</p>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                {languageChoices.map(option => {
-                  const active = selectedLang === option.code;
-
-                  return (
-                    <button
-                      key={option.code}
-                      type="button"
-                      onClick={() => setSelectedLang(option.code)}
-                      className="rounded-2xl border px-4 py-3 text-left transition-all"
-                      style={{
-                        borderColor: active ? '#1a2e1a' : '#d1d5db',
-                        background: active ? '#edf4ed' : '#ffffff',
-                        boxShadow: active ? '0 10px 24px rgba(26,46,26,0.08)' : 'none',
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-[22px]" aria-hidden="true">{option.flag}</span>
-                        <div>
-                          <div className="text-[14px] font-bold text-[#171d19]">{option.label}</div>
-                          <div className="text-[12px] text-[#6b7280]">{option.helper}</div>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div>
-                <label className="mb-2 block text-[13px] font-bold uppercase tracking-[0.18em] text-[#3d4a42]">
-                  {heroCopy.nameLabel}
-                </label>
-                <input
-                  value={formData.shopName}
-                  onChange={event => updateField('shopName', event.target.value)}
-                  className="w-full rounded-2xl border border-[#bccac0] bg-white px-4 py-4 text-[15px] text-[#171d19] outline-none transition-colors placeholder:text-[#9ca3af] focus:border-[#1a2e1a]"
-                  placeholder={selectedLang === 'en' ? 'e.g. Mama Wanjiku General Store' : 'mf. Mama Wanjiku General Store'}
-                />
-                {errors.shopName ? <p className="mt-2 text-[12px] font-medium text-[#dc2626]">{errors.shopName}</p> : null}
-              </div>
-
-              <div>
-                <label className="mb-2 block text-[13px] font-bold uppercase tracking-[0.18em] text-[#3d4a42]">
-                  {heroCopy.phoneLabel}
-                </label>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[15px] text-[#3d4a42]">+254</span>
-                  <input
-                    value={formData.phone}
-                    onChange={event => updateField('phone', event.target.value)}
-                    inputMode="numeric"
-                    className="w-full rounded-2xl border border-[#bccac0] bg-white py-4 pl-16 pr-4 text-[15px] text-[#171d19] outline-none transition-colors placeholder:text-[#9ca3af] focus:border-[#1a2e1a]"
-                    placeholder={selectedLang === 'en' ? '712 345 678' : '712 345 678'}
-                  />
-                </div>
-                {errors.phone ? <p className="mt-2 text-[12px] font-medium text-[#dc2626]">{errors.phone}</p> : null}
-              </div>
-
-              <div>
-                <label className="mb-2 block text-[13px] font-bold uppercase tracking-[0.18em] text-[#3d4a42]">
-                  {heroCopy.typeLabel}
-                </label>
-                <div className="relative">
-                  <select
-                    value={formData.businessType}
-                    onChange={event => updateField('businessType', event.target.value)}
-                    className="w-full appearance-none rounded-2xl border border-[#bccac0] bg-white px-4 py-4 pr-12 text-[15px] text-[#171d19] outline-none transition-colors focus:border-[#1a2e1a]"
-                  >
-                    {businessTypes.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option[selectedLang === 'en' ? 'en' : 'sw']}
-                      </option>
-                    ))}
-                  </select>
-                  <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M7 10l5 5 5-5" stroke="#3d4a42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                {errors.businessType ? <p className="mt-2 text-[12px] font-medium text-[#dc2626]">{errors.businessType}</p> : null}
-              </div>
+                <ChevronRight className="h-5 w-5 text-[#c8d3c8] transition-colors group-hover:text-[#1a2e1a]" />
+              </button>
 
               <button
-                type="submit"
-                disabled={isSaving}
-                className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1a2e1a] px-5 py-4 text-[15px] font-bold text-white shadow-[0_16px_28px_rgba(26,46,26,0.18)] transition-colors hover:bg-[#132513] disabled:cursor-not-allowed disabled:opacity-70"
+                onClick={() => handleLanguageSelect('sw')}
+                className="group flex items-center justify-between rounded-2xl border border-[#d8e1d3] bg-[#fafaf9] p-4 transition-all duration-200 hover:border-[#c4622d] hover:bg-[#fcf4ee]"
               >
-                <span>{heroCopy.continue}</span>
-                <ArrowRightIcon />
+                <div className="flex items-center gap-4">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#c4622d]/10 text-sm font-extrabold text-[#c4622d]">SW</span>
+                  <div className="text-left">
+                    <p className="font-bold text-[#171d19]">Kiswahili</p>
+                    <p className="text-xs text-[#6b7280]">Endelea kwa Kiswahili</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-[#c8d3c8] transition-colors group-hover:text-[#c4622d]" />
               </button>
-            </form>
-
-            <div className="mt-6 flex items-center justify-between text-[12px] text-[#6b7280]">
-              <span>{selectedLang === 'en' ? 'Saved locally for offline use.' : 'Imehifadhiwa kwenye kifaa kwa matumizi ya offline.'}</span>
-              <span className="font-semibold text-[#1a2e1a]">{businessTypeLabel}</span>
             </div>
           </div>
-        </section>
-      </main>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="relative min-h-screen overflow-hidden text-[#171d19]"
+      style={{
+        backgroundImage:
+          'radial-gradient(circle at top left, rgba(196,98,45,0.10), transparent 28%), radial-gradient(circle at right 25%, rgba(212,160,23,0.10), transparent 22%), linear-gradient(180deg, #fcf9f4 0%, #fafaf9 100%)',
+        fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      }}
+    >
+      <div className="absolute -left-24 top-20 h-48 w-48 rounded-full bg-[#1a2e1a]/5 blur-3xl" aria-hidden="true" />
+      <div className="absolute -right-20 top-1/2 h-56 w-56 rounded-full bg-[#c4622d]/10 blur-3xl" aria-hidden="true" />
+
+      <div className="mx-auto w-full max-w-4xl px-4 py-8 lg:py-10">
+        <div className="mb-6 flex flex-col gap-3 rounded-[28px] border border-[#e8e1d3] bg-white/80 px-5 py-4 shadow-[0_10px_30px_rgba(26,46,26,0.06)] backdrop-blur lg:px-6">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-[#c4622d]">{t.welcome}</p>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-[26px] font-extrabold tracking-tight text-[#171d19] sm:text-[32px]">
+                {t.heroHeading || 'Grow your business today.'}
+              </h1>
+              <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#4b5a50] sm:text-[15px]">
+                {t.heroSubheading || t.onboardingIntro}
+              </p>
+            </div>
+            <div className="rounded-full bg-[#1a2e1a]/8 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-[#1a2e1a]">
+              {currentStepCount}
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-6 grid gap-3 lg:grid-cols-4">
+          {stepMeta.map((item, index) => {
+            const Icon = item.icon;
+            const isComplete = step > index + 1;
+            const isActive = step === index + 1;
+
+            return (
+              <div
+                key={item.title}
+                className={`rounded-2xl border px-4 py-4 shadow-sm transition-all ${
+                  isActive
+                    ? 'border-[#1a2e1a] bg-[#eff5ef]'
+                    : isComplete
+                      ? 'border-[#d7e3d6] bg-white'
+                      : 'border-[#e8e1d3] bg-white/80'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex h-11 w-11 items-center justify-center rounded-full ${
+                      isComplete
+                        ? 'bg-[#1a2e1a] text-white'
+                        : isActive
+                          ? 'bg-[#c4622d] text-white'
+                          : 'border border-[#e8e1d3] bg-[#fafaf9] text-[#9ca3af]'
+                    }`}
+                  >
+                    {isComplete ? <CheckCircle className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-[12px] font-extrabold uppercase tracking-wide ${isActive ? 'text-[#1a2e1a]' : 'text-[#8a948c]'}`}>
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-[13px] leading-snug text-[#5c6960]">{item.description}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="rounded-4xl border border-[#e8e1d3] bg-white/95 p-5 shadow-[0_20px_60px_rgba(26,46,26,0.10)] backdrop-blur sm:p-6 lg:p-8">
+          <div className="mb-6 h-2 overflow-hidden rounded-full bg-[#ece7de]">
+            <div
+              className="h-full rounded-full bg-linear-to-r from-[#1a2e1a] via-[#c4622d] to-[#d4a017] transition-all duration-500"
+              style={{ width: `${(step / 4) * 100}%` }}
+            />
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-extrabold text-[#171d19]">{currentStep.title}</h2>
+              <p className="text-[#4b5a50]">{currentStep.description}</p>
+            </div>
+
+            {step === 1 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-[#3d4a42]">{t.businessNameLabel}</label>
+                  <input
+                    type="text"
+                    name="businessName"
+                    value={formData.businessName}
+                    onChange={handleInputChange}
+                    placeholder={t.businessNamePlaceholder}
+                    className="w-full rounded-2xl border border-[#e3ddd0] bg-[#fafaf9] p-4 text-[15px] outline-none transition focus:border-[#1a2e1a] focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-[#3d4a42]">{t.phoneLabel}</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#9ca3af]" />
+                    <input
+                      type="tel"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={handleInputChange}
+                      placeholder="07... or +254..."
+                      className="w-full rounded-2xl border border-[#e3ddd0] bg-[#fafaf9] p-4 pl-12 text-[15px] outline-none transition focus:border-[#1a2e1a] focus:bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {businessTypeOptions[language].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setFormData((previous) => ({ ...previous, businessType: type }))}
+                    className={`rounded-xl border-2 p-4 text-left transition-all ${
+                      formData.businessType === type
+                        ? 'border-[#1a2e1a] bg-[#eff5ef] text-[#1a2e1a]'
+                        : 'border-[#e8e1d3] bg-white hover:border-[#c4622d] hover:bg-[#fcf4ee]'
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-3">
+                {revenueRangeOptions[language].map((range) => (
+                  <button
+                    key={range}
+                    onClick={() => setFormData((previous) => ({ ...previous, revenue: range }))}
+                    className={`flex w-full items-center justify-between rounded-xl border-2 p-4 text-left transition-all ${
+                      formData.revenue === range
+                        ? 'border-[#1a2e1a] bg-[#eff5ef] text-[#1a2e1a]'
+                        : 'border-[#e8e1d3] bg-white hover:border-[#c4622d] hover:bg-[#fcf4ee]'
+                    }`}
+                  >
+                    <span className="font-medium">{range}</span>
+                    <div
+                      className={`h-5 w-5 rounded-full border-2 ${
+                        formData.revenue === range ? 'border-[#1a2e1a] bg-[#1a2e1a]' : 'border-[#c8d3c8]'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-3">
+                {businessGoalOptions[language].map((goal) => (
+                  <button
+                    key={goal}
+                    onClick={() => setFormData((previous) => ({ ...previous, goal: goal }))}
+                    className={`flex w-full items-center justify-between rounded-xl border-2 p-4 text-left transition-all ${
+                      formData.goal === goal
+                        ? 'border-[#1a2e1a] bg-[#eff5ef] text-[#1a2e1a]'
+                        : 'border-[#e8e1d3] bg-white hover:border-[#c4622d] hover:bg-[#fcf4ee]'
+                    }`}
+                  >
+                    <span className="font-medium">{goal}</span>
+                    {formData.goal === goal && <CheckCircle className="h-5 w-5 text-[#1a2e1a]" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-10 flex items-center gap-4">
+            {step > 1 && (
+              <button
+                onClick={handleBack}
+                className="flex items-center gap-2 rounded-2xl border border-[#e3ddd0] bg-white px-6 py-4 font-semibold text-[#4b5a50] transition-all hover:border-[#c4622d] hover:bg-[#fcf4ee]"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                {t.backBtn}
+              </button>
+            )}
+            <button
+              onClick={step === 4 ? handleComplete : handleNext}
+              disabled={
+                (step === 1 && (!formData.businessName || !formData.phoneNumber)) ||
+                (step === 2 && !formData.businessType) ||
+                (step === 3 && !formData.revenue) ||
+                (step === 4 && !formData.goal)
+              }
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#1a2e1a] p-4 font-bold text-white shadow-[0_10px_20px_rgba(26,46,26,0.15)] transition-all hover:bg-[#243f24] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {step === 4 ? t.getStarted : t.continueBtn}
+              {step < 4 && <ChevronRight className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ export const routeMeta = {
   '/bookkeeping': { title: 'Vitabu', enTitle: 'Bookkeeping', group: 'finance' },
   '/alerts': { title: 'Tahadhari', enTitle: 'Alerts', group: 'finance' },
   '/account': { title: 'Akaunti', enTitle: 'Account', group: 'account' },
+  '/settings': { title: 'Mipangilio', enTitle: 'Settings', group: 'account' },
   '/offline': { title: 'Sync Status', enTitle: 'Sync Status', group: 'account' },
   '/onboarding': { title: 'Onboarding', enTitle: 'Onboarding', group: 'account' },
 };
@@ -35,7 +36,7 @@ export const desktopNavGroups = [
     labelEn: 'ACCOUNT',
     items: [
       { to: '/account', labelSw: 'Akaunti', labelEn: 'Account', icon: 'user' },
-      { to: '/offline', labelSw: 'Mipangilio', labelEn: 'Settings', icon: 'settings' },
+      { to: '/settings', labelSw: 'Mipangilio', labelEn: 'Settings', icon: 'settings' },
     ],
   },
 ];
@@ -52,5 +53,5 @@ export const moreDrawerTiles = [
   { to: '/alerts', labelSw: 'Tahadhari', labelEn: 'Alerts', icon: 'alert', accent: 'red' },
   { to: '/expenses', labelSw: 'Gharama', labelEn: 'Expenses', icon: 'cash', accent: 'green' },
   { to: '/account', labelSw: 'Akaunti', labelEn: 'Account', icon: 'user', accent: 'green' },
-  { to: '/offline', labelSw: 'Mipangilio', labelEn: 'Settings', icon: 'settings', accent: 'terracotta' },
+  { to: '/settings', labelSw: 'Mipangilio', labelEn: 'Settings', icon: 'settings', accent: 'terracotta' },
 ];

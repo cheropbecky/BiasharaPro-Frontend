@@ -7,6 +7,7 @@ import Badge from '../components/Badge';
 import useLang from '../hooks/useLang';
 import heroImage from '../assets/hero.jpg';
 import image3 from '../assets/image3.jpg';
+import useSidebar from '../hooks/useSidebar';
 
 const paymentMethods = ['Pesa Taslimu', 'M-Pesa', 'Airtel Money', 'Deni'];
 const products = ['Unga Pembe 2kg', 'Sukari Mumias 1kg', 'Mafuta Elianto 2L', 'Maziwa 500ml'];
@@ -74,6 +75,7 @@ export default function OfflinePage() {
 
   const decrement = () => setQuantity(prev => Math.max(1, prev - 1));
   const increment = () => setQuantity(prev => prev + 1);
+  const { collapsed } = useSidebar();
 
   return (
     <div
@@ -90,7 +92,7 @@ export default function OfflinePage() {
       <TopBar />
       <BottomNav />
 
-      <main className="px-4 pb-20 pt-20 lg:px-8 lg:pl-60 lg:pb-8">
+      <main className={`px-4 pb-20 pt-20 lg:px-8 ${collapsed ? 'lg:pl-20' : 'lg:pl-60'} lg:pb-8 transition-all duration-200 ease-in-out`}>
         <OfflineBanner />
 
         <div className="mb-6 mt-4">

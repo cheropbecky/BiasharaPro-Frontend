@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import image1 from '../assets/image1.jpg';
 import { desktopNavGroups, PROFILE_KEY } from './navigation/navConfig';
+import { useNavigationSystem } from './navigation/NavigationProvider';
+import { useNavigate } from 'react-router-dom';
+import { clearStoredProfile } from '../utils/preferences';
 import useLang from '../hooks/useLang';
 
 function NavIcon({ name, className = 'text-inherit' }) {
@@ -56,24 +59,63 @@ function getProfile() {
 export default function Sidebar() {
   const location = useLocation();
   const { lang } = useLang();
-  const profile = getProfile();
+  const { profile: storedProfile } = useNavigationSystem();
+  const navigate = useNavigate();
+  const profile = storedProfile || getProfile();
   const shopName = profile?.shopName || 'Wanjiku Stores';
   const ownerName = profile?.ownerName || 'Mama Wanjiku';
+  const avatarUrl = profile?.avatarUrl || image1;
   const renewLabel = lang === 'en' ? 'Pay Ksh 500 / Renew' : 'Lipa Ksh 500 / Renew';
+
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sidebarCollapsed');
+      setCollapsed(saved === 'true');
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  function toggleCollapsed() {
+    const next = !collapsed;
+    setCollapsed(next);
+    try { localStorage.setItem('sidebarCollapsed', String(next)); } catch {}
+  }
 
   return (
     <aside
-      className="fixed left-0 top-0 z-40 hidden h-screen w-60 flex-col overflow-hidden bg-[#1a2e1a] text-[#fcf9f4] lg:flex"
+      className={`fixed left-0 top-0 z-40 hidden h-screen flex-col overflow-hidden bg-[#1a2e1a] text-[#fcf9f4] lg:flex transition-width duration-200 ${collapsed ? 'w-20' : 'w-60'}`}
+      aria-expanded={!collapsed}
     >
       <div className="border-b border-white/10 p-6">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-white/10 text-[12px] font-extrabold text-white">
-            BP
+        <div className="flex items-center justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-white/10 text-[12px] font-extrabold text-white">
+              BP
+            </div>
+            {!collapsed && (
+              <div>
+                <div className="text-[18px] font-bold text-[#fcf9f4]">BiasharaPro</div>
+                <div className="mt-0.5 text-[12px] text-[#A8C4B8]">{shopName}</div>
+              </div>
+            )}
           </div>
-          <div>
-            <div className="text-[18px] font-bold text-[#fcf9f4]">BiasharaPro</div>
-            <div className="mt-0.5 text-[12px] text-[#A8C4B8]">{shopName}</div>
-          </div>
+
+          <button
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-pressed={collapsed}
+            onClick={toggleCollapsed}
+            className="ml-2 rounded-md bg-white/5 p-2 text-white hover:bg-white/10"
+            title={collapsed ? 'Expand' : 'Collapse'}
+          >
+            {collapsed ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8 6l8 6-8 6V6z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M16 6 8 12l8 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            )}
+          </button>
         </div>
       </div>
 
@@ -81,7 +123,7 @@ export default function Sidebar() {
         {desktopNavGroups.map(group => (
           <div key={group.labelEn} className="mb-5 last:mb-0">
             <div className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#A8C4B8]">
-              {lang === 'en' ? group.labelEn : group.labelSw}
+              {!collapsed && (lang === 'en' ? group.labelEn : group.labelSw)}
             </div>
             <div className="mt-2 space-y-1">
               {group.items.map(item => {
@@ -92,7 +134,8 @@ export default function Sidebar() {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className="flex items-center gap-3 rounded-r-[10px] border-l-4 px-3 py-3 text-[14px] font-medium transition-colors"
+                    title={lang === 'en' ? item.labelEn : item.labelSw}
+                    className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} rounded-r-[10px] border-l-4 px-3 py-3 text-[14px] font-medium transition-colors`} 
                     style={{
                       backgroundColor: active ? 'rgba(255,255,255,0.12)' : 'transparent',
                       borderLeftColor: active ? '#E9C46A' : 'transparent',
@@ -100,9 +143,11 @@ export default function Sidebar() {
                     }}
                   >
                     <NavIcon name={item.icon} className="shrink-0" />
-                    <span className="flex-1">
-                      {lang === 'en' ? item.labelEn : item.labelSw}
-                    </span>
+                    {!collapsed && (
+                      <span className="flex-1">
+                        {lang === 'en' ? item.labelEn : item.labelSw}
+                      </span>
+                    )}
                     {item.badge ? (
                       <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#c4622d] px-1 text-[10px] font-bold text-white">
                         5
@@ -119,24 +164,47 @@ export default function Sidebar() {
       <div className="border-t border-dashed border-white/15 p-6">
         <div className="flex items-center gap-3">
           <img
-            src={image1}
+            src={avatarUrl}
             alt={ownerName}
             className="h-9 w-9 rounded-full border-2 border-white/30 object-cover"
           />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[13px] font-bold text-white">{ownerName}</div>
-            <div className="mt-1 inline-flex rounded-full bg-white/10 px-2 py-1 text-[10px] font-semibold text-white/90">
-              {lang === 'en' ? 'Basic' : 'Msingi'} / Basic
-            </div>
+            {!collapsed && (
+              <>
+                <div className="truncate text-[13px] font-bold text-white">{ownerName}</div>
+                <div className="mt-1 inline-flex rounded-full bg-white/10 px-2 py-1 text-[10px] font-semibold text-white/90">
+                  {lang === 'en' ? 'Basic' : 'Msingi'} / Basic
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        <button
-          type="button"
-          className="mt-3 inline-flex rounded-full bg-[#c4622d] px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm"
-        >
-          {renewLabel}
-        </button>
+        {!collapsed && (
+          <>
+            <button
+              type="button"
+              className="mt-3 inline-flex rounded-full bg-[#c4622d] px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm"
+            >
+              {renewLabel}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearStoredProfile();
+                if (typeof window !== 'undefined') {
+                  // force full reload to ensure providers reset
+                  window.location.replace('/');
+                } else {
+                  navigate('/onboarding');
+                }
+              }}
+              className="mt-3 ml-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-transparent bg-white px-3 py-2 text-[13px] font-semibold text-[#1a2e1a]"
+            >
+              Logout
+            </button>
+          </>
+        )}
       </div>
     </aside>
   );

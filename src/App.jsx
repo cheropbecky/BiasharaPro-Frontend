@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
+import { LanguageProvider } from './context/LanguageContext';
 import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
 import ExpensesPage from './pages/ExpensesPage';
@@ -9,6 +10,7 @@ import AlertsPage from './pages/AlertsPage';
 import OfflinePage from './pages/OfflinePage';
 import InventoryPage from './pages/InventoryPage';
 import BookkeepingPage from './pages/BookkeepingPage';
+import ProfilePage from './pages/ProfilePage';
 import { NavigationProvider } from './components/navigation/NavigationProvider';
 
 const ONBOARDING_COMPLETE_KEY = 'biasharapro_onboarding_complete';
@@ -21,9 +23,11 @@ function hasCompletedOnboarding() {
 export default function App() {
 	return (
 		<Router>
-			<NavigationProvider>
-				<AppShell />
-			</NavigationProvider>
+			<LanguageProvider>
+				<NavigationProvider>
+					<AppShell />
+				</NavigationProvider>
+			</LanguageProvider>
 		</Router>
 	);
 }
@@ -35,7 +39,7 @@ function AppShell() {
 	return (
 			<main>
 					<Routes>
-						<Route path="/" element={<Navigate to={onboardingComplete ? '/dashboard' : '/onboarding'} replace />} />
+						<Route path="/" element={onboardingComplete ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />} />
 						<Route
 							path="/dashboard"
 							element={onboardingComplete ? <DashboardPage /> : <Navigate to="/onboarding" replace />}
@@ -45,6 +49,8 @@ function AppShell() {
 						<Route path="/alerts" element={<AlertsPage />} />
 						<Route path="/inventory" element={<InventoryPage />} />
 						<Route path="/bookkeeping" element={<BookkeepingPage />} />
+						<Route path="/settings" element={<ProfilePage />} />
+						<Route path="/profile" element={<ProfilePage />} />
 						<Route path="/offline" element={<OfflinePage />} />
 						<Route
 							path="/onboarding"
