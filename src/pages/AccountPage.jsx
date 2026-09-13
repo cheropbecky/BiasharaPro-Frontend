@@ -1,253 +1,490 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  Smartphone, ShieldCheck, Download, Upload, CheckCircle2,
+  RefreshCw, AlertCircle, Sparkles, Check, Database, Save, ArrowRight, X
+} from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
-import Badge from '../components/Badge';
 import OfflineBanner from '../components/OfflineBanner';
 import useLang from '../hooks/useLang';
-import image1 from '../assets/image1.jpg';
-import image2 from '../assets/image2.jpg';
 import useSidebar from '../hooks/useSidebar';
-
-const paymentHistory = [
-  { date: 'Nov 24, 2024', amount: 'Ksh 500', mpesa: 'QJH5K9', status: 'Paid' },
-  { date: 'Oct 24, 2024', amount: 'Ksh 500', mpesa: 'P8X2ZT', status: 'Paid' },
-  { date: 'Sep 24, 2024', amount: 'Ksh 500', mpesa: 'M4K7LD', status: 'Paid' },
-];
-
-const includedFeatures = [
-  'Usimamizi wa Stoki / Stock Management',
-  'Rekodi ya Mauzo / Sales Recording',
-  'Gharama na Vitabu / Expenses & Bookkeeping',
-  'Kazi bila Mtandao / Works Offline',
-  'Kifaa kimoja / Single Device',
-];
-
-const lockedFeatures = [
-  'Usawazishaji wa vifaa vingi / Multi-device sync (Pro)',
-  'Hifadhi ya wingu / Cloud backup (Pro)',
-  'Ripoti za PDF / PDF Reports (Pro)',
-  'Tawi nyingi / Multi-branch (Pro)',
-];
-
-const includedTiles = [
-  { icon: '📦', label: 'Stoki' },
-  { icon: '💰', label: 'Mauzo' },
-  { icon: '📋', label: 'Vitabu' },
-  { icon: '📵', label: 'Offline' },
-];
-
-function CheckIcon() {
-  return (
-    <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[12px] text-[#16a34a]">✓</span>
-  );
-}
-
-function LockedIcon() {
-  return (
-    <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[12px] text-[#d1d5db]">○</span>
-  );
-}
-
-function TrendUpIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 16l6-6 4 4 6-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M16 7h4v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function TrendDownIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 8l6 6 4-4 6 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M16 17h4v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function WalletIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 7h13a3 3 0 0 1 3 3v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M17 12h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="17" cy="12" r="1.1" fill="currentColor" />
-    </svg>
-  );
-}
-
-function IconBubble({ children, colorClass }) {
-  return <div className={`flex h-10 w-10 items-center justify-center rounded-full ${colorClass}`}>{children}</div>;
-}
+import { useNavigationSystem } from '../components/navigation/NavigationProvider';
+import { writeStoredProfile } from '../utils/preferences';
+import { exportFullDatabase, importFullDatabase, DB_CHANGE_EVENT } from '../db/sqlite';
 
 export default function AccountPage() {
-  const { t, lang } = useLang();
+  const { lang, t } = useLang();
   const { collapsed } = useSidebar();
+  const { profile, updateProfile } = useNavigationSystem();
+
+  const [shopName, setShopName] = useState(profile?.shopName || 'BiasharaPro Retail');
+  const [ownerName, setOwnerName] = useState(profile?.ownerName || 'Wanjiku');
+  const [phoneNumber, setPhoneNumber] = useState(profile?.phoneNumber || '0712345678');
+  const [location, setLocation] = useState(profile?.location || 'Nairobi, Kenya');
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Subscription state
+  const [subStatus, setSubStatus] = useState(() => {
+    const saved = localStorage.getItem('biasharapro_sub_data');
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + 14); // 14-day trial
+    return {
+      plan: 'BiasharaPro Standard',
+      price: 500,
+      active: true,
+      expiryDate: expiry.toISOString(),
+      history: [
+        { date: 'Leo', amount: 'KSh 0 (Trial 14 Days)', mpesa: 'TRIAL-ACT', status: 'Active' },
+      ],
+    };
+  });
+
+  const [showStkModal, setShowStkModal] = useState(false);
+  const [stkPhone, setStkPhone] = useState(phoneNumber);
+  const [stkStatus, setStkStatus] = useState('idle'); // idle, sending, waiting_pin, success, error
+  const [stkReceiptCode, setStkReceiptCode] = useState('');
+
+  // Backup & Restore
+  const [exporting, setExporting] = useState(false);
+  const [importMessage, setImportMessage] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('biasharapro_sub_data', JSON.stringify(subStatus));
+  }, [subStatus]);
+
+  const handleSaveProfile = (e) => {
+    e.preventDefault();
+    const updated = {
+      ...profile,
+      shopName: shopName.trim(),
+      ownerName: ownerName.trim(),
+      phoneNumber: phoneNumber.trim(),
+      location: location.trim(),
+    };
+    writeStoredProfile(updated);
+    if (updateProfile) updateProfile(updated);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
+
+  const handleStartStkPush = () => {
+    if (!stkPhone) return;
+    setStkStatus('sending');
+
+    setTimeout(() => {
+      setStkStatus('waiting_pin');
+
+      setTimeout(() => {
+        // Simulate successful PIN entry
+        const randomCode = 'SK' + Math.floor(10000000 + Math.random() * 90000000).toString(36).toUpperCase();
+        setStkReceiptCode(randomCode);
+        setStkStatus('success');
+
+        // Extend subscription by 30 days
+        const newExpiry = new Date();
+        newExpiry.setDate(newExpiry.getDate() + 30);
+
+        setSubStatus(prev => ({
+          ...prev,
+          active: true,
+          expiryDate: newExpiry.toISOString(),
+          history: [
+            {
+              date: new Date().toLocaleDateString('en-KE', { month: 'short', day: 'numeric', year: 'numeric' }),
+              amount: 'KSh 500',
+              mpesa: randomCode,
+              status: 'Paid',
+            },
+            ...prev.history,
+          ],
+        }));
+      }, 4000);
+    }, 1500);
+  };
+
+  const handleExportBackup = async () => {
+    try {
+      setExporting(true);
+      const jsonStr = await exportFullDatabase();
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `BiasharaPro_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Error backing up database: ' + err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImportBackup = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result;
+        if (typeof text === 'string') {
+          await importFullDatabase(text);
+          setImportMessage('Hifadhidata imerejeshwa kikamilifu!');
+          setTimeout(() => setImportMessage(''), 4000);
+        }
+      } catch (err) {
+        alert('Hitilafu katika kurejesha faili: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const expiryFormatted = new Date(subStatus.expiryDate).toLocaleDateString(lang === 'en' ? 'en-KE' : 'sw-KE', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 
   return (
     <div
       className="min-h-screen bg-[#eff5ef] text-[#171d19] relative"
       style={{
         fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-        backgroundImage: `linear-gradient(180deg, rgba(239,245,239,0.92), rgba(239,245,239,0.92)), url(${image1})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'top right',
-        backgroundRepeat: 'no-repeat',
       }}
     >
       <Sidebar />
       <TopBar />
       <BottomNav />
 
-      <main className={`px-4 pb-20 pt-20 lg:px-8 ${collapsed ? 'lg:pl-20' : 'lg:pl-60'} lg:pb-8 transition-all duration-200 ease-in-out`}>
+      <main className={`px-4 pb-24 pt-20 lg:px-8 ${collapsed ? 'lg:pl-20' : 'lg:pl-60'} lg:pb-12 transition-all duration-200 ease-in-out`}>
         <OfflineBanner />
 
-        <div className="mb-6 mt-4 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-[24px] font-extrabold text-[#171d19] lg:text-[28px]">{t('account')}</h1>
-            <p className="mt-1 text-[14px] text-[#3d4a42] lg:text-[16px]">{t('accountSubtitle')}</p>
-          </div>
+        {/* Header */}
+        <div className="mb-6 mt-4">
+          <h1 className="text-2xl font-black text-[#171d19] lg:text-3xl">
+            {lang === 'en' ? 'Account & Subscription' : 'Akaunti na Usajili wa M-Pesa'}
+          </h1>
+          <p className="mt-1 text-sm text-[#3d4a42]">
+            {lang === 'en'
+              ? 'Manage your shop profile, M-Pesa subscription, and offline database backups'
+              : 'Dhibiti wasifu wa duka lako, malipo ya M-Pesa KSh 500, na hifadhi nakala ya stoki'}
+          </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-12">
-          <section className="lg:col-span-8">
-            <div className="rounded-2xl border-t-[3px] border-t-[#006948] bg-white p-7 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full bg-[#006948] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
-                  {lang === 'en' ? 'Basic Plan' : 'Mpango wa Msingi'}
+          {/* Left Column: Subscription & M-Pesa (7 cols) */}
+          <section className="lg:col-span-7 space-y-6">
+            {/* Subscription Card */}
+            <div className="rounded-3xl border-t-4 border-t-[#006948] bg-white p-6 sm:p-7 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-[#006948]">
+                  BiasharaPro Standard
                 </span>
-                <div className="flex items-center gap-2 text-[14px] font-semibold text-[#16a34a]">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#16a34a]" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   {lang === 'en' ? 'Active' : 'Amilifu'}
+                </span>
+              </div>
+
+              <div className="mt-4 flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-black text-[#171d19]">KSh 500</span>
+                <span className="text-sm font-bold text-gray-500">/ mwezi (per month)</span>
+              </div>
+
+              <p className="mt-1 text-xs text-gray-500">
+                {lang === 'en' ? 'Valid until' : 'Halali hadi'}: <strong className="text-gray-800">{expiryFormatted}</strong>
+              </p>
+
+              {/* Benefits */}
+              <div className="mt-5 space-y-2.5 border-t border-gray-100 pt-4 text-xs font-semibold text-gray-700">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>100% Kazi bila mtandao (Offline-first SQLite)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>Kaunta ya Mauzo (POS) na Risiti za WhatsApp</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>Usimamizi kamili wa stoki na tahadhari za bidhaa</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>Ripoti halisi za faida na hasara (P&L)</span>
                 </div>
               </div>
 
-              <div className="mt-5 flex flex-wrap items-end gap-2">
-                <div className="text-[48px] font-extrabold leading-none text-[#171d19]">Ksh 500</div>
-                <div className="pb-1 text-[20px] text-[#6b7280]">/mwezi / /month</div>
-              </div>
-              <p className="mt-2 text-[14px] text-[#6b7280]">{lang === 'en' ? 'Valid until' : 'Halali hadi'}: Nov 24, 2024</p>
-
-              <div className="mt-7 space-y-3">
-                {includedFeatures.map(feature => (
-                  <div key={feature} className="flex items-start gap-3 text-[14px] text-[#3d4a42]">
-                    <CheckIcon />
-                    <span>{feature}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 space-y-3">
-                {lockedFeatures.map(feature => (
-                  <div key={feature} className="flex items-start gap-3 text-[14px] text-[#9ca3af]">
-                    <LockedIcon />
-                    <span>{feature}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="my-7 border-t border-[#e5e7eb]" />
-
-              <div>
-                <div className="text-[12px] font-semibold uppercase tracking-wide text-[#16a34a]">LIPA VIA M-PESA</div>
-                <p className="mt-3 text-[14px] leading-relaxed text-[#3d4a42]">
-                  {lang === 'en'
-                    ? "Tap the button below. You'll receive an M-Pesa prompt on your registered phone to confirm your Ksh 500 payment."
-                    : 'Bonyeza kitufe hapa chini. Utapata ujumbe wa M-Pesa kwenye simu yako uliosajiliwa kuthibitisha malipo ya Ksh 500.'}
+              {/* Pay via M-Pesa STK */}
+              <div className="mt-6 rounded-2xl bg-emerald-50/60 p-4 border border-emerald-100">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#006948] uppercase tracking-wider">
+                  <Smartphone className="h-4 w-4" />
+                  <span>Lipa Ada ya Mwezi na M-Pesa</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-600">
+                  Bonyeza kitufe hapa chini ili kupokea ujumbe wa M-Pesa kwenye simu yako kuthibitisha malipo ya KSh 500 kwa mwezi mwingine.
                 </p>
 
                 <button
                   type="button"
-                  className="mt-5 flex h-14 w-full items-center justify-center rounded-2xl bg-[#4caf50] px-4 text-[18px] font-bold text-white shadow-[0_10px_15px_-3px_rgba(76,175,80,0.3)] transition-colors hover:bg-[#3f9b43]"
+                  onClick={() => {
+                    setStkPhone(phoneNumber);
+                    setStkStatus('idle');
+                    setShowStkModal(true);
+                  }}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#006948] py-3 text-xs sm:text-sm font-extrabold text-white shadow-md hover:bg-[#00553a] active:scale-98 transition"
                 >
-                  {lang === 'en' ? 'Pay Now — Ksh 500' : 'Lipa Sasa / Pay Now — Ksh 500'}
+                  <Smartphone className="h-4 w-4" />
+                  <span>Lipa Sasa na M-Pesa (KSh 500)</span>
                 </button>
-                <p className="mt-2 text-center text-[10px] text-[#9ca3af]">Inaendeshwa na Safaricom M-Pesa Daraja API</p>
               </div>
             </div>
 
-            <div className="mt-5 overflow-hidden rounded-2xl border border-[rgba(226,232,240,0.5)] bg-white">
-              <div className="px-5 py-5 text-[18px] font-bold text-[#171d19]">
-                {lang === 'en' ? 'Payment History' : 'Historia ya Malipo / Payment History'}
-              </div>
-              <div className="hidden md:block">
-                <div className="grid grid-cols-12 gap-4 border-y border-[#e5e7eb] bg-[#f9fafb] px-8 py-4 text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
-                  <div className="col-span-2">TAREHE</div>
-                  <div className="col-span-2">KIASI</div>
-                  <div className="col-span-4">NAMBARI YA MPESA</div>
-                  <div className="col-span-4">HALI</div>
-                </div>
-                <div className="divide-y divide-[#f3f4f6]">
-                  {paymentHistory.map(row => (
-                    <div key={row.mpesa} className="grid grid-cols-12 gap-4 px-8 py-4 text-[14px] text-[#171d19]">
-                      <div className="col-span-2 font-medium text-[#3d4a42]">{row.date}</div>
-                      <div className="col-span-2 font-semibold">{row.amount}</div>
-                      <div className="col-span-4 font-medium text-[#6b7280]">{row.mpesa}</div>
-                      <div className="col-span-4"><Badge status="income">{lang === 'en' ? 'Paid' : 'Imelipwa'}</Badge></div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {/* Payment History Card */}
+            <div className="rounded-3xl border border-[#bccac0]/40 bg-white p-6 shadow-sm">
+              <h3 className="text-sm font-extrabold text-[#171d19] mb-3">
+                {lang === 'en' ? 'M-Pesa Payment Receipts' : 'Historia ya Malipo ya M-Pesa'}
+              </h3>
 
-              <div className="space-y-3 p-3 md:hidden">
-                {paymentHistory.map(row => (
-                  <article key={`${row.mpesa}-mobile`} className="rounded-xl border border-[#e5e7eb] bg-white p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[13px] text-[#6b7280]">{row.date}</p>
-                        <p className="mt-1 text-[14px] font-semibold text-[#171d19]">{row.amount}</p>
-                      </div>
-                      <Badge status="income">{lang === 'en' ? 'Paid' : 'Imelipwa'}</Badge>
+              <div className="divide-y divide-gray-100">
+                {subStatus.history.map((h, i) => (
+                  <div key={i} className="py-3 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-bold text-gray-800 block">{h.amount}</span>
+                      <span className="text-[10px] text-gray-400">Ref: {h.mpesa} • {h.date}</span>
                     </div>
-                    <p className="mt-2 text-[12px] text-[#6b7280]">{row.mpesa}</p>
-                  </article>
+                    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-[#006948]">
+                      {h.status}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>
           </section>
 
-          <aside className="lg:col-span-4 space-y-4">
-            <div className="rounded-2xl overflow-hidden bg-white shadow-sm">
-              <img src={image2} alt="BiasharaPro features" className="w-full h-40 object-cover" />
-              <div className="p-6">
-                <h2 className="text-[16px] font-bold text-[#171d19]">{lang === 'en' ? "What's Included" : 'Imejumuishwa / What\'s Included'}</h2>
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  {includedTiles.map(tile => (
-                    <div key={tile.label} className="rounded-xl bg-[#eff5ef] p-4 text-center">
-                      <div className="text-[24px]">{tile.icon}</div>
-                      <div className="mt-2 text-[12px] font-semibold uppercase text-[#171d19]">{tile.label}</div>
-                    </div>
-                  ))}
+          {/* Right Column: Shop Profile & Data Backup (5 cols) */}
+          <section className="lg:col-span-5 space-y-6">
+            {/* Shop Profile Settings */}
+            <div className="rounded-3xl border border-[#bccac0]/40 bg-white p-6 shadow-sm">
+              <h3 className="text-sm font-extrabold text-[#171d19] mb-4">
+                {lang === 'en' ? 'Shop Profile' : 'Wasifu wa Duka Lako'}
+              </h3>
+
+              <form onSubmit={handleSaveProfile} className="space-y-3">
+                {saveSuccess && (
+                  <div className="rounded-xl bg-emerald-50 p-2.5 text-xs text-emerald-800 font-bold border border-emerald-200">
+                    ✓ Taarifa zimehifadhiwa kikamilifu!
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                    Jina la Duka / Shop Name
+                  </label>
+                  <input
+                    value={shopName}
+                    onChange={e => setShopName(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-gray-300 px-3 text-xs focus:border-[#006948] focus:outline-none"
+                  />
                 </div>
-              </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                    Jina la Mwenye Duka / Owner Name
+                  </label>
+                  <input
+                    value={ownerName}
+                    onChange={e => setOwnerName(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-gray-300 px-3 text-xs focus:border-[#006948] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                    Nambari ya Simu (M-Pesa)
+                  </label>
+                  <input
+                    value={phoneNumber}
+                    onChange={e => setPhoneNumber(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-gray-300 px-3 text-xs focus:border-[#006948] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                    Eneo / Location
+                  </label>
+                  <input
+                    value={location}
+                    onChange={e => setLocation(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-gray-300 px-3 text-xs focus:border-[#006948] focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-gray-900 py-2.5 text-xs font-bold text-white hover:bg-black transition"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  <span>Hifadhi Mabadiliko</span>
+                </button>
+              </form>
             </div>
 
-            <div className="rounded-2xl border-2 border-dashed border-[#bccac0] bg-white p-6">
-              <h3 className="text-[16px] font-bold text-[#171d19]">{lang === 'en' ? 'Upgrade to Pro' : 'Panda kwa Pro'}</h3>
-              <p className="mt-2 text-[20px] font-bold text-[#006948]">Ksh 1,200/mwezi</p>
-              <div className="mt-4 space-y-3">
-                {[
-                  'Vifaa vingi / Multi-device',
-                  'Wingu / Cloud backup',
-                  'Ripoti / PDF reports',
-                ].map(feature => (
-                  <div key={feature} className="flex items-start gap-3 text-[13px] text-[#3d4a42]">
-                    <CheckIcon />
-                    <span>{feature}</span>
-                  </div>
-                ))}
+            {/* Offline Database Backup & Restore */}
+            <div className="rounded-3xl border border-[#bccac0]/40 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <Database className="h-4 w-4 text-[#006948]" />
+                <h3 className="text-sm font-extrabold text-[#171d19]">
+                  {lang === 'en' ? 'Offline Database & Backup' : 'Hifadhi Nakala ya Duka (Backup)'}
+                </h3>
               </div>
-              <button
-                type="button"
-                className="mt-5 w-full rounded-xl border border-[#006948] px-4 py-3 text-[14px] font-semibold text-[#006948]"
-              >
-                {lang === 'en' ? 'Learn More' : 'Jifunze Zaidi'}
-              </button>
+              <p className="text-xs text-gray-500 leading-relaxed mb-4">
+                Data yako yote ya stoki, mauzo na risiti huhifadhiwa ndani ya simu yako kwa SQLite. Unaweza kupakua nakala ili kulinda biashara yako ukibadilisha kifaa.
+              </p>
+
+              {importMessage && (
+                <div className="mb-3 rounded-xl bg-emerald-50 p-2 text-xs text-emerald-800 font-bold">
+                  {importMessage}
+                </div>
+              )}
+
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={handleExportBackup}
+                  disabled={exporting}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#006948] py-2.5 text-xs font-bold text-[#006948] hover:bg-emerald-50 transition"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>{exporting ? 'Inatayarisha...' : 'Pakua Nakala (Export Backup)'}</span>
+                </button>
+
+                <label className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition">
+                  <Upload className="h-3.5 w-3.5 text-gray-500" />
+                  <span>Rejesha Nakala (Restore File)</span>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportBackup}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
-          </aside>
+          </section>
         </div>
       </main>
+
+      {/* M-Pesa STK Push Simulation Modal */}
+      {showStkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-sm max-h-[92vh] flex flex-col overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold text-xs">
+                  M
+                </span>
+                <span className="text-sm font-extrabold text-[#171d19]">Lipa na M-Pesa STK</span>
+              </div>
+              <button
+                onClick={() => setShowStkModal(false)}
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {stkStatus === 'idle' && (
+              <div className="space-y-4">
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Weka nambari ya simu ya Safaricom itakayopokea ujumbe wa kulipa <strong>KSh 500</strong> ya usajili wa mwezi:
+                </p>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                    Nambari ya Simu
+                  </label>
+                  <input
+                    value={stkPhone}
+                    onChange={e => setStkPhone(e.target.value)}
+                    placeholder="07XX XXX XXX au 01XX XXX XXX"
+                    className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm focus:border-emerald-600 focus:outline-none"
+                  />
+                </div>
+
+                <div className="pt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowStkModal(false)}
+                    className="flex-1 rounded-xl border border-gray-300 py-2.5 text-xs font-bold text-gray-700"
+                  >
+                    Ghairi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleStartStkPush}
+                    className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white shadow hover:bg-emerald-700 transition"
+                  >
+                    Tuma Ujumbe (STK)
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {stkStatus === 'sending' && (
+              <div className="py-8 text-center space-y-3">
+                <RefreshCw className="mx-auto h-8 w-8 text-emerald-600 animate-spin" />
+                <h4 className="font-bold text-sm text-[#171d19]">Inatuma ujumbe wa M-Pesa...</h4>
+                <p className="text-xs text-gray-500">Inawasiliana na Safaricom Daraja API</p>
+              </div>
+            )}
+
+            {stkStatus === 'waiting_pin' && (
+              <div className="py-6 text-center space-y-3">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 animate-bounce">
+                  <Smartphone className="h-7 w-7" />
+                </div>
+                <h4 className="font-black text-sm text-[#171d19]">Angalia Simu Yako!</h4>
+                <div className="rounded-2xl bg-gray-50 p-3 text-xs text-gray-700 border border-gray-200 text-left space-y-1">
+                  <p className="font-bold">Do you want to pay KES 500 to BiasharaPro?</p>
+                  <p className="text-[11px] text-gray-500">Enter M-PESA PIN to confirm.</p>
+                </div>
+                <p className="text-[11px] text-gray-400">Inasubiri uthibitisho wa PIN...</p>
+              </div>
+            )}
+
+            {stkStatus === 'success' && (
+              <div className="py-4 text-center space-y-3">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <Check className="h-6 w-6" />
+                </div>
+                <h4 className="font-black text-base text-[#171d19]">Malipo Yamethibitishwa!</h4>
+                <p className="text-xs text-gray-600">
+                  Umefanikiwa kulipa <strong>KSh 500</strong> kwa mwezi mwingine wa BiasharaPro.
+                </p>
+                <div className="rounded-xl bg-gray-100 p-2 font-mono text-xs text-gray-700">
+                  Ref Code: <strong>{stkReceiptCode}</strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowStkModal(false)}
+                  className="w-full rounded-xl bg-[#006948] py-2.5 text-xs font-bold text-white mt-2"
+                >
+                  Sawa, Endelea
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

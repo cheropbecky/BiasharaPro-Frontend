@@ -1,0 +1,6 @@
+{
+  "name": "BiasharaPro",
+  "description": "Smart business management, bookkeeping, and inventory tracking application tailored for Kenyan micro and small businesses",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

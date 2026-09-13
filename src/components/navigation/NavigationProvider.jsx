@@ -194,7 +194,6 @@ export function NavigationProvider({ children }) {
     setMoreDrawerOpen,
     setExpenseSheetOpen,
     setProductSheetOpen,
-    setInventorySpeedDialOpen,
     setToast,
   };
 

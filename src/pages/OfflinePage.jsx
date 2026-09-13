@@ -101,7 +101,7 @@ export default function OfflinePage() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <section className="rounded-3xl border-2 border-[#bccac0] bg-white p-8">
+          <section className="rounded-3xl border-2 border-[#bccac0] bg-white p-4 sm:p-6 lg:p-8">
             <div className="inline-flex items-center gap-2 rounded-lg bg-[#fef9c3] px-3 py-2 text-[14px] font-bold text-[#854d0e]">
               <WarningIcon />
               <span>{t('offlineWorking')} / {lang === 'en' ? 'Kazi inaendelea' : 'Kazi inaendelea'}</span>

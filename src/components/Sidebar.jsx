@@ -81,7 +81,10 @@ export default function Sidebar() {
   function toggleCollapsed() {
     const next = !collapsed;
     setCollapsed(next);
-    try { localStorage.setItem('sidebarCollapsed', String(next)); } catch {}
+    try {
+      localStorage.setItem('sidebarCollapsed', String(next));
+      window.dispatchEvent(new Event('sidebarCollapsedChange'));
+    } catch {}
   }
 
   return (

@@ -2,101 +2,138 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { writeStoredProfile } from '../utils/preferences';
+import { addProduct } from '../db/sqlite';
 import {
-  Globe,
-  ChevronRight,
-  ChevronLeft,
-  CheckCircle,
-  Building2,
-  Phone,
-  Store,
-  Wallet,
-  Target,
+  Globe, ChevronRight, ChevronLeft, CheckCircle2,
+  Building2, Phone, Store, Sparkles, Check, ArrowRight
 } from 'lucide-react';
 
 const ONBOARDING_COMPLETE_KEY = 'biasharapro_onboarding_complete';
 
+const BUSINESS_TEMPLATES = {
+  duka: {
+    nameEn: 'General Retail / Duka',
+    nameSw: 'Duka la Rejareja / Kiosk',
+    products: [
+      { name: 'Unga wa Pembe 2kg', category: 'Chakula', unit: 'pkts', buy: 165, sell: 195, initial: 15, min: 5 },
+      { name: 'Sukari Mara 1kg', category: 'Chakula', unit: 'kg', buy: 120, sell: 145, initial: 20, min: 5 },
+      { name: 'Mafuta ya Kupikia Rina 2L', category: 'Chakula', unit: 'pcs', buy: 490, sell: 580, initial: 10, min: 3 },
+      { name: 'Maziwa KCC 500ml', category: 'Vinywaji', unit: 'pkts', buy: 52, sell: 65, initial: 24, min: 6 },
+      { name: 'Mkate wa Broadways 400g', category: 'Chakula', unit: 'pcs', buy: 55, sell: 65, initial: 12, min: 4 },
+      { name: 'Sabuni ya Omo 500g', category: 'Usafi', unit: 'pcs', buy: 130, sell: 160, initial: 10, min: 3 },
+    ],
+  },
+  groceries: {
+    nameEn: 'Mama Mboga / Fresh Groceries',
+    nameSw: 'Mama Mboga / Mbogamboga',
+    products: [
+      { name: 'Nyanya Safi 1kg', category: 'Chakula', unit: 'kg', buy: 70, sell: 100, initial: 30, min: 5 },
+      { name: 'Kitunguu Maji 1kg', category: 'Chakula', unit: 'kg', buy: 80, sell: 120, initial: 25, min: 5 },
+      { name: 'Viazi Mviringo 1kg', category: 'Chakula', unit: 'kg', buy: 60, sell: 90, initial: 40, min: 10 },
+      { name: 'Sukuma Wiki (Fungu)', category: 'Chakula', unit: 'pcs', buy: 15, sell: 30, initial: 50, min: 10 },
+      { name: 'Karoti 1kg', category: 'Chakula', unit: 'kg', buy: 50, sell: 80, initial: 20, min: 5 },
+      { name: 'Ndizi Mbivu (Fungu)', category: 'Chakula', unit: 'pcs', buy: 50, sell: 80, initial: 20, min: 5 },
+    ],
+  },
+  chemist: {
+    nameEn: 'Pharmacy / Chemist',
+    nameSw: 'Duka la Dawa (Chemist)',
+    products: [
+      { name: 'Paracetamol 500mg 10s', category: 'Dawa', unit: 'pkts', buy: 20, sell: 50, initial: 50, min: 10 },
+      { name: 'Cold Cap Capsules 10s', category: 'Dawa', unit: 'pkts', buy: 70, sell: 120, initial: 30, min: 5 },
+      { name: 'Amoxicillin 500mg (10s)', category: 'Dawa', unit: 'pkts', buy: 110, sell: 180, initial: 20, min: 5 },
+      { name: 'Cetirizine 10mg (10s)', category: 'Dawa', unit: 'pkts', buy: 30, sell: 70, initial: 40, min: 10 },
+      { name: 'Bandage Elastic 3-inch', category: 'Vifaa', unit: 'pcs', buy: 45, sell: 90, initial: 15, min: 4 },
+      { name: 'Methylated Spirit 100ml', category: 'Usafi', unit: 'pcs', buy: 60, sell: 110, initial: 20, min: 5 },
+    ],
+  },
+  hardware: {
+    nameEn: 'Hardware / Construction',
+    nameSw: 'Duka la Hardware / Vifaa vya Ujenzi',
+    products: [
+      { name: 'Misumari 3-inch (1kg)', category: 'Vifaa', unit: 'kg', buy: 130, sell: 180, initial: 50, min: 10 },
+      { name: 'Saruji Bamburi Nguvu 50kg', category: 'Vifaa', unit: 'boxes', buy: 650, sell: 750, initial: 20, min: 5 },
+      { name: 'Brashi ya Rangi 3-inch', category: 'Vifaa', unit: 'pcs', buy: 70, sell: 120, initial: 25, min: 5 },
+      { name: 'Rangi Gloss White 1L', category: 'Vifaa', unit: 'litres', buy: 480, sell: 650, initial: 12, min: 3 },
+      { name: 'Bomba PPR 20mm (4m)', category: 'Vifaa', unit: 'pcs', buy: 190, sell: 280, initial: 30, min: 6 },
+    ],
+  },
+  salon: {
+    nameEn: 'Salon & Kinyozi Services',
+    nameSw: 'Salon & Kinyozi',
+    products: [
+      { name: 'Kinyozi: Kunyoa Kawaida', category: 'Huduma', unit: 'pcs', buy: 20, sell: 150, initial: 999, min: 10 },
+      { name: 'Kinyozi: VIP + Head Wash', category: 'Huduma', unit: 'pcs', buy: 50, sell: 300, initial: 999, min: 10 },
+      { name: 'Salon: Kusuka Lines', category: 'Huduma', unit: 'pcs', buy: 100, sell: 500, initial: 999, min: 10 },
+      { name: 'Salon: Dreadlocks Retwist', category: 'Huduma', unit: 'pcs', buy: 200, sell: 900, initial: 999, min: 10 },
+      { name: 'Hair Food Darling 250g', category: 'Bidhaa', unit: 'pcs', buy: 150, sell: 220, initial: 15, min: 3 },
+    ],
+  },
+};
+
 export default function OnboardingPage() {
   const navigate = useNavigate();
-  const { t, language, switchLanguage } = useLanguage();
-  const [languageSelected, setLanguageSelected] = useState(false);
-  const [step, setStep] = useState(1);
+  const { language, switchLanguage } = useLanguage();
+  const [step, setStep] = useState(1); // 1: Lang, 2: Shop Details, 3: Starter Products, 4: Ready
+  const isSw = language === 'sw';
+
   const [formData, setFormData] = useState({
-    businessName: '',
+    shopName: '',
+    ownerName: '',
     phoneNumber: '',
-    businessType: '',
-    revenue: '',
-    goal: '',
+    businessType: 'duka',
+    location: '',
   });
 
-  const businessTypeOptions = {
-    en: ['Retail Store', 'Service Business', 'Manufacturing', 'Agribusiness', 'Wholesale', 'Other'],
-    sw: ['Duka la Rejareja', 'Biashara ya Huduma', 'Uzalishaji', 'Kilimo Biashara', 'Jumla', 'Nyingine'],
+  const [selectedProducts, setSelectedProducts] = useState(
+    BUSINESS_TEMPLATES.duka.products.map(p => p.name)
+  );
+
+  const handleLanguageSelect = (lang) => {
+    switchLanguage(lang);
+    setStep(2);
   };
 
-  const revenueRangeOptions = {
-    en: ['0 - 50,000 Kes', '50,000 - 200,000 Kes', '200,000 - 500,000 Kes', '500,000+ Kes'],
-    sw: ['0 - 50,000 Kes', '50,000 - 200,000 Kes', '200,000 - 500,000 Kes', '500,000+ Kes'],
+  const handleBusinessTypeChange = (type) => {
+    setFormData(prev => ({ ...prev, businessType: type }));
+    const tpl = BUSINESS_TEMPLATES[type] || BUSINESS_TEMPLATES.duka;
+    setSelectedProducts(tpl.products.map(p => p.name));
   };
 
-  const businessGoalOptions = {
-    en: ['Track Daily Sales', 'Manage Inventory', 'Generate Reports', 'Accept Digital Payments', 'Get Business Loans'],
-    sw: ['Fuatilia Mauzo ya Kila Siku', 'Simamia Bidhaa', 'Tengeneza Ripoti', 'Pokea Malipo ya Kidijitali', 'Pata Mikopo ya Biashara'],
+  const toggleProductSelection = (pName) => {
+    setSelectedProducts(prev =>
+      prev.includes(pName) ? prev.filter(n => n !== pName) : [...prev, pName]
+    );
   };
 
-  const stepMeta = [
-    { title: t.step1Title, description: t.step1Desc, icon: Building2 },
-    { title: t.step2Title, description: t.step2Desc, icon: Store },
-    { title: t.step3Title, description: t.step3Desc, icon: Wallet },
-    { title: t.step4Title, description: t.step4Desc, icon: Target },
-  ];
-
-  const stepCounters = [t.step1Of4, t.step2Of4, t.step3Of4, t.step4Of4];
-  const currentStep = stepMeta[step - 1] || stepMeta[0];
-  const currentStepCount = stepCounters[step - 1] || t.step1Of4;
-
-  const handleLanguageSelect = (nextLanguage) => {
-    // debug: ensure handler is called
-    // set local UI state so the selection is visible immediately
-    console.log('Onboarding: selecting language', nextLanguage);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('biasharapro_debug_onboarding_click', nextLanguage);
-    }
-    setLanguageSelected(true);
-    switchLanguage(nextLanguage);
-    // Mark onboarding complete and go straight to dashboard
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
-      window.location.replace('/dashboard');
-    } else {
-      navigate('/dashboard');
-    }
-  };
-
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((previous) => ({ ...previous, [name]: value }));
-  };
-
-  const handleNext = () => setStep((previous) => previous + 1);
-  const handleBack = () => setStep((previous) => previous - 1);
-
-  const handleComplete = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
-    }
-
+  const handleComplete = async () => {
+    // 1. Save Profile
     writeStoredProfile({
-      shopName: formData.businessName,
-      phoneNumber: formData.phoneNumber,
+      shopName: formData.shopName.trim() || (isSw ? 'Duka Langu' : 'My Biashara Store'),
+      ownerName: formData.ownerName.trim() || (isSw ? 'Mwenye Duka' : 'Shop Owner'),
+      phoneNumber: formData.phoneNumber.trim(),
       businessType: formData.businessType,
-      revenue: formData.revenue,
-      goal: formData.goal,
+      location: formData.location.trim() || 'Nairobi, Kenya',
       language,
-      location: '',
       avatarUrl: '',
     });
 
+    // 2. Seed selected products into SQLite
+    const activeTemplate = BUSINESS_TEMPLATES[formData.businessType] || BUSINESS_TEMPLATES.duka;
+    for (const item of activeTemplate.products) {
+      if (selectedProducts.includes(item.name)) {
+        try {
+          await addProduct(item);
+        } catch (e) {
+          console.error('Error seeding product', item.name, e);
+        }
+      }
+    }
+
+    // 3. Mark Onboarding as Completed
+    localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+
+    // 4. Redirect to Dashboard
     if (typeof window !== 'undefined') {
       window.location.replace('/dashboard');
     } else {
@@ -104,264 +141,304 @@ export default function OnboardingPage() {
     }
   };
 
-  if (!languageSelected) {
-    return (
-      <div
-        className="relative min-h-screen overflow-hidden px-4 py-10 text-[#171d19]"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at top left, rgba(196,98,45,0.10), transparent 30%), radial-gradient(circle at bottom right, rgba(26,46,26,0.14), transparent 34%), linear-gradient(180deg, #fcf9f4 0%, #fafaf9 100%)',
-          fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-        }}
-      >
-        <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-2xl items-center justify-center">
-          <div className="w-full rounded-4xl border border-[#e8e1d3] bg-white/95 p-6 shadow-[0_20px_60px_rgba(26,46,26,0.10)] backdrop-blur sm:p-8">
-            <div className="text-center space-y-4">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#1a2e1a]/10 text-[#1a2e1a]">
-                <Globe className="h-8 w-8" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-extrabold text-[#171d19] sm:text-3xl">{t.chooseLanguage || 'Choose Your Language'}</h1>
-                <p className="mt-2 text-[14px] text-[#4b5a50]">Chagua lugha yako ili uendelee</p>
-              </div>
-            </div>
-
-            <div className="mt-8 grid gap-4">
-              <button
-                onClick={() => handleLanguageSelect('en')}
-                className="group flex items-center justify-between rounded-2xl border border-[#d8e1d3] bg-[#fafaf9] p-4 transition-all duration-200 hover:border-[#1a2e1a] hover:bg-[#eff5ef]"
-              >
-                <div className="flex items-center gap-4">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1a2e1a]/10 text-sm font-extrabold text-[#1a2e1a]">EN</span>
-                  <div className="text-left">
-                    <p className="font-bold text-[#171d19]">English</p>
-                    <p className="text-xs text-[#6b7280]">Continue in English</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-[#c8d3c8] transition-colors group-hover:text-[#1a2e1a]" />
-              </button>
-
-              <button
-                onClick={() => handleLanguageSelect('sw')}
-                className="group flex items-center justify-between rounded-2xl border border-[#d8e1d3] bg-[#fafaf9] p-4 transition-all duration-200 hover:border-[#c4622d] hover:bg-[#fcf4ee]"
-              >
-                <div className="flex items-center gap-4">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#c4622d]/10 text-sm font-extrabold text-[#c4622d]">SW</span>
-                  <div className="text-left">
-                    <p className="font-bold text-[#171d19]">Kiswahili</p>
-                    <p className="text-xs text-[#6b7280]">Endelea kwa Kiswahili</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-[#c8d3c8] transition-colors group-hover:text-[#c4622d]" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
-      className="relative min-h-screen overflow-hidden text-[#171d19]"
+      className="min-h-screen bg-[#eff5ef] text-[#171d19] flex items-center justify-center p-3 sm:p-4"
       style={{
-        backgroundImage:
-          'radial-gradient(circle at top left, rgba(196,98,45,0.10), transparent 28%), radial-gradient(circle at right 25%, rgba(212,160,23,0.10), transparent 22%), linear-gradient(180deg, #fcf9f4 0%, #fafaf9 100%)',
         fontFamily: '"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
-      <div className="absolute -left-24 top-20 h-48 w-48 rounded-full bg-[#1a2e1a]/5 blur-3xl" aria-hidden="true" />
-      <div className="absolute -right-20 top-1/2 h-56 w-56 rounded-full bg-[#c4622d]/10 blur-3xl" aria-hidden="true" />
-
-      <div className="mx-auto w-full max-w-4xl px-4 py-8 lg:py-10">
-        <div className="mb-6 flex flex-col gap-3 rounded-[28px] border border-[#e8e1d3] bg-white/80 px-5 py-4 shadow-[0_10px_30px_rgba(26,46,26,0.06)] backdrop-blur lg:px-6">
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-[#c4622d]">{t.welcome}</p>
-          <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="w-full max-w-xl rounded-3xl bg-white p-4 sm:p-8 shadow-xl border border-[#bccac0]/50">
+        {/* Step Indicator */}
+        <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#006948] text-white font-black text-sm">
+              BP
+            </div>
             <div>
-              <h1 className="text-[26px] font-extrabold tracking-tight text-[#171d19] sm:text-[32px]">
-                {t.heroHeading || 'Grow your business today.'}
-              </h1>
-              <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#4b5a50] sm:text-[15px]">
-                {t.heroSubheading || t.onboardingIntro}
+              <span className="text-sm font-black text-[#171d19]">BiasharaPro</span>
+              <span className="text-[10px] text-gray-500 block">Kenya MSME Business Engine</span>
+            </div>
+          </div>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-[#006948]">
+            {isSw ? `Hatua ${step} ya 4` : `Step ${step} of 4`}
+          </span>
+        </div>
+
+        {/* STEP 1: Language Selection */}
+        {step === 1 && (
+          <div className="space-y-5 animate-in fade-in duration-200">
+            <div className="text-center">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-[#006948]">
+                <Globe className="h-7 w-7" />
+              </div>
+              <h2 className="text-2xl font-black text-[#171d19]">Chagua Lugha / Choose Language</h2>
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                BiasharaPro imeundwa mahususi kusaidia biashara yako kwa Kiswahili au Kiingereza.
               </p>
             </div>
-            <div className="rounded-full bg-[#1a2e1a]/8 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-[#1a2e1a]">
-              {currentStepCount}
-            </div>
-          </div>
-        </div>
 
-        <div className="mb-6 grid gap-3 lg:grid-cols-4">
-          {stepMeta.map((item, index) => {
-            const Icon = item.icon;
-            const isComplete = step > index + 1;
-            const isActive = step === index + 1;
-
-            return (
-              <div
-                key={item.title}
-                className={`rounded-2xl border px-4 py-4 shadow-sm transition-all ${
-                  isActive
-                    ? 'border-[#1a2e1a] bg-[#eff5ef]'
-                    : isComplete
-                      ? 'border-[#d7e3d6] bg-white'
-                      : 'border-[#e8e1d3] bg-white/80'
-                }`}
+            <div className="grid gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => handleLanguageSelect('sw')}
+                className="flex items-center justify-between rounded-2xl border-2 border-[#006948]/30 bg-emerald-50/40 p-4 text-left hover:border-[#006948] transition group"
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-11 w-11 items-center justify-center rounded-full ${
-                      isComplete
-                        ? 'bg-[#1a2e1a] text-white'
-                        : isActive
-                          ? 'bg-[#c4622d] text-white'
-                          : 'border border-[#e8e1d3] bg-[#fafaf9] text-[#9ca3af]'
-                    }`}
-                  >
-                    {isComplete ? <CheckCircle className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
-                  </div>
-                  <div className="min-w-0">
-                    <p className={`text-[12px] font-extrabold uppercase tracking-wide ${isActive ? 'text-[#1a2e1a]' : 'text-[#8a948c]'}`}>
-                      {item.title}
-                    </p>
-                    <p className="mt-1 text-[13px] leading-snug text-[#5c6960]">{item.description}</p>
-                  </div>
+                <div>
+                  <h3 className="font-extrabold text-[#171d19] text-base">Kiswahili</h3>
+                  <p className="text-xs text-gray-500">Mfumo kamili kwa lugha rahisi ya Kiswahili</p>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#006948] text-white">
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              </button>
 
-        <div className="rounded-4xl border border-[#e8e1d3] bg-white/95 p-5 shadow-[0_20px_60px_rgba(26,46,26,0.10)] backdrop-blur sm:p-6 lg:p-8">
-          <div className="mb-6 h-2 overflow-hidden rounded-full bg-[#ece7de]">
-            <div
-              className="h-full rounded-full bg-linear-to-r from-[#1a2e1a] via-[#c4622d] to-[#d4a017] transition-all duration-500"
-              style={{ width: `${(step / 4) * 100}%` }}
-            />
+              <button
+                type="button"
+                onClick={() => handleLanguageSelect('en')}
+                className="flex items-center justify-between rounded-2xl border-2 border-gray-200 bg-gray-50/50 p-4 text-left hover:border-[#006948] transition group"
+              >
+                <div>
+                  <h3 className="font-extrabold text-[#171d19] text-base">English</h3>
+                  <p className="text-xs text-gray-500">Use BiasharaPro in English</p>
+                </div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-300 group-hover:bg-[#006948] text-white transition">
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              </button>
+            </div>
           </div>
+        )}
 
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <h2 className="text-2xl font-extrabold text-[#171d19]">{currentStep.title}</h2>
-              <p className="text-[#4b5a50]">{currentStep.description}</p>
+        {/* STEP 2: Shop Details */}
+        {step === 2 && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <div>
+              <h2 className="text-xl font-black text-[#171d19]">
+                {isSw ? 'Taarifa za Duka Lako' : 'Your Business Details'}
+              </h2>
+              <p className="text-xs text-gray-500">
+                {isSw
+                  ? 'Taarifa hizi zitaonekana kwenye risiti na ripoti zako'
+                  : 'These details will appear on receipts and sales reports'}
+              </p>
             </div>
 
-            {step === 1 && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-[#3d4a42]">{t.businessNameLabel}</label>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                  {isSw ? 'Jina la Duka / Biashara *' : 'Shop / Business Name *'}
+                </label>
+                <input
+                  required
+                  value={formData.shopName}
+                  onChange={e => setFormData(p => ({ ...p, shopName: e.target.value }))}
+                  placeholder={isSw ? 'mfano: Wanjiku Super Retail, Otieno Kiosk...' : 'e.g. Wanjiku Stores'}
+                  className="h-11 w-full rounded-xl border border-[#bccac0] px-4 text-sm focus:border-[#006948] focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                    {isSw ? 'Jina Lako (Mwenye Duka) *' : 'Owner Name *'}
+                  </label>
                   <input
-                    type="text"
-                    name="businessName"
-                    value={formData.businessName}
-                    onChange={handleInputChange}
-                    placeholder={t.businessNamePlaceholder}
-                    className="w-full rounded-2xl border border-[#e3ddd0] bg-[#fafaf9] p-4 text-[15px] outline-none transition focus:border-[#1a2e1a] focus:bg-white"
+                    value={formData.ownerName}
+                    onChange={e => setFormData(p => ({ ...p, ownerName: e.target.value }))}
+                    placeholder="Wanjiku"
+                    className="h-11 w-full rounded-xl border border-[#bccac0] px-4 text-sm focus:border-[#006948] focus:outline-none"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-[#3d4a42]">{t.phoneLabel}</label>
-                  <div className="relative">
-                    <Phone className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#9ca3af]" />
-                    <input
-                      type="tel"
-                      name="phoneNumber"
-                      value={formData.phoneNumber}
-                      onChange={handleInputChange}
-                      placeholder="07... or +254..."
-                      className="w-full rounded-2xl border border-[#e3ddd0] bg-[#fafaf9] p-4 pl-12 text-[15px] outline-none transition focus:border-[#1a2e1a] focus:bg-white"
-                    />
-                  </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                    {isSw ? 'Nambari ya Simu (M-Pesa)' : 'Phone Number (M-Pesa)'}
+                  </label>
+                  <input
+                    value={formData.phoneNumber}
+                    onChange={e => setFormData(p => ({ ...p, phoneNumber: e.target.value }))}
+                    placeholder="0712 345 678"
+                    className="h-11 w-full rounded-xl border border-[#bccac0] px-4 text-sm focus:border-[#006948] focus:outline-none"
+                  />
                 </div>
               </div>
-            )}
 
-            {step === 2 && (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {businessTypeOptions[language].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setFormData((previous) => ({ ...previous, businessType: type }))}
-                    className={`rounded-xl border-2 p-4 text-left transition-all ${
-                      formData.businessType === type
-                        ? 'border-[#1a2e1a] bg-[#eff5ef] text-[#1a2e1a]'
-                        : 'border-[#e8e1d3] bg-white hover:border-[#c4622d] hover:bg-[#fcf4ee]'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                  {isSw ? 'Mahali Duka Lilipo (Town / Estate)' : 'Location / Town / Estate'}
+                </label>
+                <input
+                  value={formData.location}
+                  onChange={e => setFormData(p => ({ ...p, location: e.target.value }))}
+                  placeholder="mfano: Gikomba, Roysambu, Kisumu..."
+                  className="h-11 w-full rounded-xl border border-[#bccac0] px-4 text-sm focus:border-[#006948] focus:outline-none"
+                />
               </div>
-            )}
 
-            {step === 3 && (
-              <div className="space-y-3">
-                {revenueRangeOptions[language].map((range) => (
-                  <button
-                    key={range}
-                    onClick={() => setFormData((previous) => ({ ...previous, revenue: range }))}
-                    className={`flex w-full items-center justify-between rounded-xl border-2 p-4 text-left transition-all ${
-                      formData.revenue === range
-                        ? 'border-[#1a2e1a] bg-[#eff5ef] text-[#1a2e1a]'
-                        : 'border-[#e8e1d3] bg-white hover:border-[#c4622d] hover:bg-[#fcf4ee]'
-                    }`}
-                  >
-                    <span className="font-medium">{range}</span>
-                    <div
-                      className={`h-5 w-5 rounded-full border-2 ${
-                        formData.revenue === range ? 'border-[#1a2e1a] bg-[#1a2e1a]' : 'border-[#c8d3c8]'
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                  {isSw ? 'Aina ya Biashara' : 'Business Category'}
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {Object.entries(BUSINESS_TEMPLATES).map(([key, item]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleBusinessTypeChange(key)}
+                      className={`rounded-xl p-2.5 text-left border text-xs font-bold transition ${
+                        formData.businessType === key
+                          ? 'border-[#006948] bg-emerald-50 text-[#006948]'
+                          : 'border-gray-200 text-gray-700 hover:bg-gray-50'
                       }`}
-                    />
-                  </button>
-                ))}
+                    >
+                      {isSw ? item.nameSw : item.nameEn}
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
+            </div>
 
-            {step === 4 && (
-              <div className="space-y-3">
-                {businessGoalOptions[language].map((goal) => (
-                  <button
-                    key={goal}
-                    onClick={() => setFormData((previous) => ({ ...previous, goal: goal }))}
-                    className={`flex w-full items-center justify-between rounded-xl border-2 p-4 text-left transition-all ${
-                      formData.goal === goal
-                        ? 'border-[#1a2e1a] bg-[#eff5ef] text-[#1a2e1a]'
-                        : 'border-[#e8e1d3] bg-white hover:border-[#c4622d] hover:bg-[#fcf4ee]'
+            <div className="pt-3 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="rounded-xl border border-gray-300 px-4 py-3 text-xs font-bold text-gray-700"
+              >
+                {isSw ? 'Rudi' : 'Back'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                className="flex-1 rounded-xl bg-[#006948] py-3 text-xs font-bold text-white shadow hover:bg-[#00553a] transition"
+              >
+                {isSw ? 'Endelea na Bidhaa za Kuanzia' : 'Continue to Starter Stock'} →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Starter Product Templates */}
+        {step === 3 && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                <h2 className="text-xl font-black text-[#171d19]">
+                  {isSw ? 'Bidhaa za Kuanzia (Templates)' : 'Quick-Start Starter Products'}
+                </h2>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {isSw
+                  ? 'Tumekuandalia orodha ya bidhaa zinazouzika haraka. Chagua unazotaka kuanza nazo:'
+                  : 'Select fast-moving items to prepopulate your catalog so you can start selling immediately:'}
+              </p>
+            </div>
+
+            <div className="max-h-60 overflow-y-auto space-y-2 border border-gray-100 rounded-2xl p-2 bg-gray-50/50">
+              {(BUSINESS_TEMPLATES[formData.businessType] || BUSINESS_TEMPLATES.duka).products.map(item => {
+                const isSelected = selectedProducts.includes(item.name);
+                return (
+                  <div
+                    key={item.name}
+                    onClick={() => toggleProductSelection(item.name)}
+                    className={`flex items-center justify-between rounded-xl p-3 cursor-pointer border transition ${
+                      isSelected ? 'bg-white border-[#006948]' : 'bg-white/60 border-gray-200 opacity-60'
                     }`}
                   >
-                    <span className="font-medium">{goal}</span>
-                    {formData.goal === goal && <CheckCircle className="h-5 w-5 text-[#1a2e1a]" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-5 w-5 items-center justify-center rounded-md text-white text-xs ${isSelected ? 'bg-[#006948]' : 'border border-gray-300'}`}>
+                        {isSelected && <Check className="h-3 w-3" />}
+                      </div>
+                      <div>
+                        <span className="font-bold text-xs text-[#171d19] block">{item.name}</span>
+                        <span className="text-[10px] text-gray-500">
+                          Kununua: KSh {item.buy} • Kuuza: KSh {item.sell}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-[#006948]">
+                      +{item.sell - item.buy} faida
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
 
-          <div className="mt-10 flex items-center gap-4">
-            {step > 1 && (
+            <div className="pt-3 flex gap-3">
               <button
-                onClick={handleBack}
-                className="flex items-center gap-2 rounded-2xl border border-[#e3ddd0] bg-white px-6 py-4 font-semibold text-[#4b5a50] transition-all hover:border-[#c4622d] hover:bg-[#fcf4ee]"
+                type="button"
+                onClick={() => setStep(2)}
+                className="rounded-xl border border-gray-300 px-4 py-3 text-xs font-bold text-gray-700"
               >
-                <ChevronLeft className="w-5 h-5" />
-                {t.backBtn}
+                {isSw ? 'Rudi' : 'Back'}
               </button>
-            )}
-            <button
-              onClick={step === 4 ? handleComplete : handleNext}
-              disabled={
-                (step === 1 && (!formData.businessName || !formData.phoneNumber)) ||
-                (step === 2 && !formData.businessType) ||
-                (step === 3 && !formData.revenue) ||
-                (step === 4 && !formData.goal)
-              }
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#1a2e1a] p-4 font-bold text-white shadow-[0_10px_20px_rgba(26,46,26,0.15)] transition-all hover:bg-[#243f24] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {step === 4 ? t.getStarted : t.continueBtn}
-              {step < 4 && <ChevronRight className="w-5 h-5" />}
-            </button>
+              <button
+                type="button"
+                onClick={() => setStep(4)}
+                className="flex-1 rounded-xl bg-[#006948] py-3 text-xs font-bold text-white shadow hover:bg-[#00553a] transition"
+              >
+                {isSw ? 'Endelea' : 'Next Step'} →
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* STEP 4: Ready to Launch */}
+        {step === 4 && (
+          <div className="space-y-5 animate-in fade-in duration-200">
+            <div className="text-center">
+              <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-[#006948]">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <h2 className="text-2xl font-black text-[#171d19]">
+                {isSw ? 'Duka Lako Liko Tayari!' : 'Your Business is Ready!'}
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">
+                {isSw
+                  ? `Hongera ${formData.ownerName || 'Mwenye Duka'}! Duka lako la ${formData.shopName || 'Biashara'} limewekwa tayari.`
+                  : `Congratulations! ${formData.shopName || 'Your store'} has been configured.`}
+              </p>
+            </div>
+
+            {/* Subscription & Offline highlights */}
+            <div className="rounded-2xl bg-[#006948]/5 border border-[#006948]/20 p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-600">
+                  {isSw ? 'Jaribio la Bure (Free Trial)' : 'Free Trial'}
+                </span>
+                <span className="text-xs font-extrabold text-[#006948]">Siku 14 Bure (14 Days)</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-600">
+                  {isSw ? 'Ada ya Mwezi Baadaye' : 'Monthly Subscription'}
+                </span>
+                <span className="text-sm font-black text-[#171d19]">KSh 500 / mwezi</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-[#006948]/15 pt-2 text-[11px] text-gray-600">
+                <span>✓ {isSw ? 'Haitaji intaneti (100% Offline)' : '100% Offline Capable'}</span>
+                <span>✓ {isSw ? 'Risiti za WhatsApp na SMS' : 'WhatsApp Receipts'}</span>
+              </div>
+            </div>
+
+            <div className="pt-2 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                className="rounded-xl border border-gray-300 px-4 py-3 text-xs font-bold text-gray-700"
+              >
+                {isSw ? 'Rudi' : 'Back'}
+              </button>
+              <button
+                type="button"
+                onClick={handleComplete}
+                className="flex-1 rounded-xl bg-[#006948] py-3.5 text-sm font-black text-white shadow-lg hover:bg-[#00553a] active:scale-98 transition"
+              >
+                {isSw ? 'Anza Kutumia BiasharaPro 🚀' : 'Launch BiasharaPro 🚀'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
